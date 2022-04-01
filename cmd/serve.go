@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"telegrambot/internal/mysql"
+	"telegrambot/internal/vars"
 )
 
 // serveCmd represents the serve command
@@ -36,39 +37,47 @@ var serveCmd = &cobra.Command{
 				continue
 			}
 
-			if user, ok := mysql.IsAuth(Db, update.Message.Chat.UserName); ok {
+			if user, ok, err := mysql.IsAuth(Db, update.Message.Chat.UserName); ok {
 				if !update.Message.IsCommand() {
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, configTelegram.HandleKeyboard)
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, vars.HandleKeyboard)
 					if _, err := bot.Send(msg); err != nil {
 						errorMsg(update.Message.Chat.ID, bot, err)
 						log.Println(err)
+
+						continue
 					}
 
 					continue
 				}
 
 				if update.Message.Text == "/care" {
-					err := mysql.ChangeCareStatus(Db, user)
+					err := mysql.ChangeCareStatus(Db, &user)
 					if err != nil {
 						errorMsg(update.Message.Chat.ID, bot, err)
 						log.Println(err)
+
+						continue
 					}
 
-					textMessage := mysql.GetChangeCareStatus(configTelegram.CareDisabled, configTelegram.CareEnabled, user)
+					textMessage := mysql.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled, &user)
 
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, textMessage)
 
 					if _, err := bot.Send(msg); err != nil {
 						errorMsg(update.Message.Chat.ID, bot, err)
 						log.Println(err)
+
+						continue
 					}
 				}
 
 				if update.Message.Text == "/appointment" {
-					textMessage, err := mysql.GetPreparedAppointment(Db, user)
+					textMessage, err := mysql.GetPreparedAppointment(Db, &user)
 					if err != nil {
 						errorMsg(update.Message.Chat.ID, bot, err)
 						log.Println(err)
+
+						continue
 					}
 
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, textMessage)
@@ -76,11 +85,13 @@ var serveCmd = &cobra.Command{
 					if _, err := bot.Send(msg); err != nil {
 						errorMsg(update.Message.Chat.ID, bot, err)
 						log.Println(err)
+
+						continue
 					}
 				}
 
 			} else {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, configTelegram.HandleUnauth)
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, vars.HandleUnauth+err.Error())
 
 				if _, err := bot.Send(msg); err != nil {
 					errorMsg(update.Message.Chat.ID, bot, err)

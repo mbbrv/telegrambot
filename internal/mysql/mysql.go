@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"strconv"
 )
 
 type User struct {
@@ -44,11 +45,11 @@ func GetAppointment(DB *sql.DB, user *User) (*Appointments, error) {
 }
 
 func PrepareAppointment(appointments Appointments) string {
-	return ""
+	return strconv.FormatInt(appointments.cost.Int64, 10)
 }
 
-func ChangeCareStatus(DB *sql.DB, user *User) (error) {
-	_, err := DB.Exec(`UPDATE Users SET care = $1 WHERE id = $2;`, !user.care, user.id)
+func ChangeCareStatus(DB *sql.DB, user *User) error {
+	_, err := DB.Exec(`UPDATE Users SET care = ? WHERE id = ?`, !user.care, user.id)
 	if err != nil {
 		return err
 	}
@@ -65,12 +66,12 @@ func GetChangeCareStatus(disabled string, enabled string, user *User) string {
 	return disabled
 }
 
-func IsAuth(DB *sql.DB, userName string) (*User, bool) {
+func IsAuth(DB *sql.DB, userName string) (User, bool, error) {
 	var user User
-	row := DB.QueryRow(`SELECT * FROM Users WHERE username = ?;`, userName)
-	if err := row.Scan(&user.id, &user.username); err != nil {
-		return nil, false
+	row := DB.QueryRow(`SELECT * FROM Users WHERE username = ?`, userName)
+	if err := row.Scan(&user.id, &user.username, &user.care); err != nil {
+		return User{}, false, err
 	}
 
-	return &user, true
+	return user, true, nil
 }
