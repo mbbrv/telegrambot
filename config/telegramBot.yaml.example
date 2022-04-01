@@ -1,0 +1,11 @@
+telegram:
+  token: ''
+  dev: true
+  handleKeyboard: ''
+  handleUnauth: ''
+
+mysql:
+  user: ''
+  password: ''
+  db: ''
+  host: 'localhost'
