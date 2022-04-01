@@ -3,6 +3,8 @@ telegram:
   dev: true
   handleKeyboard: ''
   handleUnauth: ''
+  careDisabled: ''
+  careEnabled: ''
 
 mysql:
   user: ''

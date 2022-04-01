@@ -48,11 +48,13 @@ var serveCmd = &cobra.Command{
 				}
 
 				if update.Message.Text == "/care" {
-					textMessage, err := mysql.ChangeCareStatus(Db, user)
+					err := mysql.ChangeCareStatus(Db, user)
 					if err != nil {
 						errorMsg(update.Message.Chat.ID, bot, err)
 						log.Println(err)
 					}
+
+					textMessage := mysql.GetChangeCareStatus(configTelegram.CareDisabled, configTelegram.CareEnabled, user)
 
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, textMessage)
 

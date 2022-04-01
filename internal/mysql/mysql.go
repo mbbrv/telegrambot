@@ -4,13 +4,6 @@ import (
 	"database/sql"
 )
 
-type Config struct {
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
-	DB       string `mapstructure:"db"`
-	Host     string `mapstructure:"host"`
-}
-
 type User struct {
 	id       int
 	username string
@@ -38,7 +31,7 @@ func GetPreparedAppointment(DB *sql.DB, user *User) (string, error) {
 func GetAppointment(DB *sql.DB, user *User) (*Appointments, error) {
 	var appointments Appointments
 
-	row := DB.QueryRow("SELECT * FROM Appointments WHERE user_id = ? ORDER by datetime DESC LIMIT 1", user.id)
+	row := DB.QueryRow(`SELECT * FROM Appointments WHERE user_id = ? ORDER by datetime DESC LIMIT 1`, user.id)
 	if row.Err() != nil {
 		return nil, row.Err()
 	}
@@ -54,13 +47,27 @@ func PrepareAppointment(appointments Appointments) string {
 	return ""
 }
 
-func ChangeCareStatus(DB *sql.DB, user *User) (string, error) {
-	return "", nil
+func ChangeCareStatus(DB *sql.DB, user *User) (error) {
+	_, err := DB.Exec(`UPDATE Users SET care = $1 WHERE id = $2;`, !user.care, user.id)
+	if err != nil {
+		return err
+	}
+
+	user.care = !user.care
+	return nil
+}
+
+func GetChangeCareStatus(disabled string, enabled string, user *User) string {
+	if user.care {
+		return enabled
+	}
+
+	return disabled
 }
 
 func IsAuth(DB *sql.DB, userName string) (*User, bool) {
 	var user User
-	row := DB.QueryRow("SELECT * FROM Users WHERE username = ?", userName)
+	row := DB.QueryRow(`SELECT * FROM Users WHERE username = ?;`, userName)
 	if err := row.Scan(&user.id, &user.username); err != nil {
 		return nil, false
 	}

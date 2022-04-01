@@ -5,4 +5,6 @@ type Config struct {
 	Dev            bool   `mapstructure:"dev"`
 	HandleKeyboard string `mapstructure:"handleKeyboard"`
 	HandleUnauth   string `mapstructure:"handleUnauth"`
+	CareDisabled   string `mapstructure:"careDisabled"`
+	CareEnabled    string `mapstructure:"careEnabled"`
 }
