@@ -6,31 +6,25 @@ import (
 	"telegrambot/internal/vars"
 )
 
-func GetInlineButtons() [][]tgbotapi.InlineKeyboardButton {
-
-	return [][]tgbotapi.InlineKeyboardButton{
-		{getInlineButtonAppointment()},
-		{getInlineButtonCare()},
+func GetKeyboardButtonsStart() [][]tgbotapi.KeyboardButton {
+	return [][]tgbotapi.KeyboardButton{
+		{tgbotapi.NewKeyboardButtonContact(vars.KeyboardButtonMobilePhone)},
+		{tgbotapi.NewKeyboardButton(vars.KeyboardButtonUsername)},
 	}
 }
 
-func getInlineButtonAppointment() tgbotapi.InlineKeyboardButton {
-	var appointment = "appointment"
-
-	return tgbotapi.InlineKeyboardButton{Text: vars.InlineButtonAppointment, CallbackData: &appointment}
-}
-
-func getInlineButtonCare() tgbotapi.InlineKeyboardButton {
-	var care = "care"
-
-	return tgbotapi.InlineKeyboardButton{Text: vars.InlineButtonCare, CallbackData: &care}
+func GetInlineButtonsMain() [][]tgbotapi.InlineKeyboardButton {
+	return [][]tgbotapi.InlineKeyboardButton{
+		{tgbotapi.NewInlineKeyboardButtonData(vars.InlineButtonAppointment, "appointment")},
+		{tgbotapi.NewInlineKeyboardButtonData(vars.InlineButtonCare, "care")},
+	}
 }
 
 func GetMessage(update tgbotapi.Update) (*tgbotapi.Message, error) {
 	if update.Message != nil {
 		return update.Message, nil
 	}
-
+	update.CallbackData()
 	if update.CallbackQuery != nil {
 		return update.CallbackQuery.Message, nil
 	}
