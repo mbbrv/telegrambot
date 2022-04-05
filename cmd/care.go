@@ -3,6 +3,8 @@ package cmd
 
 import (
 	"fmt"
+	"telegrambot/internal/care/vars"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -24,5 +26,7 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(careCmd)
-
+	for {
+		time.Sleep(vars.TimeToSleep)
+	}
 }

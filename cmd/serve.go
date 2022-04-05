@@ -5,9 +5,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
 	"log"
-	"telegrambot/internal/helpers"
 	"telegrambot/internal/mysql"
-	"telegrambot/internal/vars"
+	"telegrambot/internal/serve/helpers"
+	"telegrambot/internal/serve/vars"
 )
 
 // serveCmd represents the serve command
