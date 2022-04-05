@@ -59,7 +59,7 @@ var serveCmd = &cobra.Command{
 				continue
 			}
 
-			if update.CallbackQuery == nil && message.Contact == nil && message.Text != vars.KeyboardButtonUsername {
+			if !message.IsCommand() && update.CallbackQuery == nil && message.Contact == nil && message.Text != vars.KeyboardButtonUsername {
 
 				//Возможно, ничего не надо отправлять при удалении сообщения
 				//msg := tgbotapi.NewMessage(message.Chat.ID, vars.HandleKeyboard)
@@ -101,13 +101,12 @@ var serveCmd = &cobra.Command{
 			//TODO: объединить вместе селекты к юзеру
 			if user, ok, err := mysql.IsAuth(Db, message.Chat); ok {
 				if auth {
-					greetingsMsg(vars.AuthSucessMessage, message.Chat.ID, bot)
+					greetingsMsg(message.Chat.ID, bot)
 					auth = false
 				}
 
 				if update.CallbackData() == "care" {
 					err := user.ChangeCareStatus(Db)
-
 					if err != nil {
 						errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
 						log.Println(err)
@@ -117,7 +116,6 @@ var serveCmd = &cobra.Command{
 
 					textMessage := user.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled)
 					msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
-
 					if _, err := bot.Send(msg); err != nil {
 						errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
 						log.Println(err)
@@ -137,13 +135,16 @@ var serveCmd = &cobra.Command{
 
 					msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
 					msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtonsMain()}
-
 					if _, err := bot.Send(msg); err != nil {
 						errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
 						log.Println(err)
 
 						continue
 					}
+				}
+
+				if message.Command() == "description" {
+					descriptionMsg(message.Chat.ID, bot)
 				}
 
 			} else {
@@ -174,11 +175,26 @@ func errorMsg(message string, chatId int64, bot *tgbotapi.BotAPI, err error) {
 	}
 }
 
-func greetingsMsg(message string, chatId int64, bot *tgbotapi.BotAPI) {
-	msg := tgbotapi.NewMessage(chatId, message)
+func greetingsMsg(chatId int64, bot *tgbotapi.BotAPI) {
+	msg := tgbotapi.NewMessage(chatId, vars.AuthSuccessMessage)
+	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+
+	if _, err := bot.Send(msg); err != nil {
+		errorMsg(vars.HandleDefault, chatId, bot, err)
+		log.Println(err)
+
+		return
+	}
+
+	descriptionMsg(chatId, bot)
+}
+
+func descriptionMsg(chatId int64, bot *tgbotapi.BotAPI) {
+	msg := tgbotapi.NewMessage(chatId, vars.DescriptionMessage)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtonsMain()}
 
 	if _, err := bot.Send(msg); err != nil {
+		errorMsg(vars.HandleDefault, chatId, bot, err)
 		log.Println(err)
 	}
 }
