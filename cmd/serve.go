@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
+	"telegrambot/internal/helpers"
 	"telegrambot/internal/mysql"
 	"telegrambot/internal/vars"
 )
@@ -33,15 +34,28 @@ var serveCmd = &cobra.Command{
 
 		for update := range updates {
 
-			if update.Message == nil {
+			message, err := helpers.GetMessage(update)
+			if err != nil {
+				errorMsg(message.Chat.ID, bot, err)
+				log.Println(err)
+
 				continue
 			}
 
-			if user, ok, err := mysql.IsAuth(Db, update.Message.Chat.UserName); ok {
-				if !update.Message.IsCommand() {
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, vars.HandleKeyboard)
-					if _, err := bot.Send(msg); err != nil {
-						errorMsg(update.Message.Chat.ID, bot, err)
+			if user, ok, err := mysql.IsAuth(Db, message.Chat.UserName); ok {
+				if !message.IsCommand() && update.CallbackQuery == nil {
+
+					//Возможно, ничего не надо отправлять при удалении сообщения
+					//msg := tgbotapi.NewMessage(message.Chat.ID, vars.HandleKeyboard)
+					//if _, err := bot.Send(msg); err != nil {
+					//	errorMsg(message.Chat.ID, bot, err)
+					//	log.Println(err)
+					//
+					//	continue
+					//}
+
+					del := tgbotapi.NewDeleteMessage(message.Chat.ID, message.MessageID)
+					if _, err := bot.Send(del); err != nil {
 						log.Println(err)
 
 						continue
@@ -50,18 +64,9 @@ var serveCmd = &cobra.Command{
 					continue
 				}
 
-				if update.Message.Text == "/care" {
-					err := mysql.ChangeCareStatus(Db, &user)
-					if err != nil {
-						errorMsg(update.Message.Chat.ID, bot, err)
-						log.Println(err)
-
-						continue
-					}
-
-					textMessage := mysql.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled, &user)
-
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, textMessage)
+				if message.Text == "/start" {
+					msg := tgbotapi.NewMessage(message.Chat.ID, vars.WelcomeMessage)
+					msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtons()}
 
 					if _, err := bot.Send(msg); err != nil {
 						errorMsg(update.Message.Chat.ID, bot, err)
@@ -71,19 +76,41 @@ var serveCmd = &cobra.Command{
 					}
 				}
 
-				if update.Message.Text == "/appointment" {
-					textMessage, err := mysql.GetPreparedAppointment(Db, &user)
+				if update.CallbackData() == "care" {
+					err := user.ChangeCareStatus(Db)
+
 					if err != nil {
-						errorMsg(update.Message.Chat.ID, bot, err)
+						errorMsg(message.Chat.ID, bot, err)
 						log.Println(err)
 
 						continue
 					}
 
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, textMessage)
+					textMessage := user.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled)
+					msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
 
 					if _, err := bot.Send(msg); err != nil {
-						errorMsg(update.Message.Chat.ID, bot, err)
+						errorMsg(message.Chat.ID, bot, err)
+						log.Println(err)
+
+						continue
+					}
+				}
+
+				if update.CallbackData() == "appointment" {
+					textMessage, err := user.GetPreparedAppointment(Db)
+					if err != nil {
+						errorMsg(message.Chat.ID, bot, err)
+						log.Println(err)
+
+						continue
+					}
+
+					msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
+					msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtons()}
+
+					if _, err := bot.Send(msg); err != nil {
+						errorMsg(message.Chat.ID, bot, err)
 						log.Println(err)
 
 						continue
@@ -91,10 +118,10 @@ var serveCmd = &cobra.Command{
 				}
 
 			} else {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, vars.HandleUnauth+err.Error())
+				msg := tgbotapi.NewMessage(message.Chat.ID, vars.HandleUnauth+" | "+err.Error())
 
 				if _, err := bot.Send(msg); err != nil {
-					errorMsg(update.Message.Chat.ID, bot, err)
+					errorMsg(message.Chat.ID, bot, err)
 					log.Println(err)
 				}
 			}
