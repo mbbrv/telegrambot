@@ -98,7 +98,7 @@ var serveCmd = &cobra.Command{
 				auth = true
 			}
 
-			//TODO: соеденить вместе селекты к юзеру
+			//TODO: объединить вместе селекты к юзеру
 			if user, ok, err := mysql.IsAuth(Db, message.Chat); ok {
 				if auth {
 					greetingsMsg(vars.AuthSucessMessage, message.Chat.ID, bot)
