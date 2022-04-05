@@ -7,6 +7,7 @@ package cmd
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -24,7 +25,8 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
-var configTelegram *telegram.Config
+var ConfigTelegram *telegram.Config
+var Bot *tgbotapi.BotAPI
 var Db *sql.DB
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -45,6 +47,11 @@ func init() {
 		log.Fatalln(err)
 	}
 
+	err = viper.UnmarshalKey("telegram", &ConfigTelegram)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	var configDB *mysql.Config
 	err = viper.UnmarshalKey("mysql", &configDB)
 	if err != nil {
@@ -55,9 +62,11 @@ func init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
+
+	Bot, err = tgbotapi.NewBotAPI(ConfigTelegram.Token)
+	if err != nil {
+		panic(err)
+	}
 
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "telegram", "", "telegram file (default is $HOME/.telegrambot.yaml)")
 

@@ -4,7 +4,6 @@ package cmd
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"log"
 	"telegrambot/internal/helpers"
 	"telegrambot/internal/mysql"
@@ -21,18 +20,13 @@ var serveCmd = &cobra.Command{
 
 		var auth = false
 
-		bot, err := tgbotapi.NewBotAPI(configTelegram.Token)
-		if err != nil {
-			panic(err)
-		}
-
-		bot.Debug = configTelegram.Dev
+		Bot.Debug = ConfigTelegram.Dev
 
 		updateConfig := tgbotapi.NewUpdate(0)
 
 		updateConfig.Timeout = 30
 
-		updates := bot.GetUpdatesChan(updateConfig)
+		updates := Bot.GetUpdatesChan(updateConfig)
 
 		for update := range updates {
 
@@ -49,8 +43,8 @@ var serveCmd = &cobra.Command{
 				msg := tgbotapi.NewMessage(message.Chat.ID, vars.WelcomeMessage)
 				msg.ReplyMarkup = tgbotapi.ReplyKeyboardMarkup{Keyboard: helpers.GetKeyboardButtonsStart()}
 
-				if _, err := bot.Send(msg); err != nil {
-					errorMsg(vars.HandleDefault, update.Message.Chat.ID, bot, err)
+				if _, err := Bot.Send(msg); err != nil {
+					errorMsg(vars.HandleDefault, update.Message.Chat.ID, err)
 					log.Println(err)
 
 					continue
@@ -71,7 +65,7 @@ var serveCmd = &cobra.Command{
 				//}
 
 				del := tgbotapi.NewDeleteMessage(message.Chat.ID, message.MessageID)
-				if _, err := bot.Send(del); err != nil {
+				if _, err := Bot.Send(del); err != nil {
 					log.Println(err)
 
 					continue
@@ -101,14 +95,14 @@ var serveCmd = &cobra.Command{
 			//TODO: объединить вместе селекты к юзеру
 			if user, ok, err := mysql.IsAuth(Db, message.Chat); ok {
 				if auth {
-					greetingsMsg(message.Chat.ID, bot)
+					greetingsMsg(message.Chat.ID)
 					auth = false
 				}
 
 				if update.CallbackData() == "care" {
 					err := user.ChangeCareStatus(Db)
 					if err != nil {
-						errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
+						errorMsg(vars.HandleDefault, message.Chat.ID, err)
 						log.Println(err)
 
 						continue
@@ -116,8 +110,8 @@ var serveCmd = &cobra.Command{
 
 					textMessage := user.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled)
 					msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
-					if _, err := bot.Send(msg); err != nil {
-						errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
+					if _, err := Bot.Send(msg); err != nil {
+						errorMsg(vars.HandleDefault, message.Chat.ID, err)
 						log.Println(err)
 
 						continue
@@ -127,7 +121,7 @@ var serveCmd = &cobra.Command{
 				if update.CallbackData() == "appointment" {
 					textMessage, err := user.GetPreparedAppointment(Db)
 					if err != nil {
-						errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
+						errorMsg(vars.HandleDefault, message.Chat.ID, err)
 						log.Println(err)
 
 						continue
@@ -135,8 +129,8 @@ var serveCmd = &cobra.Command{
 
 					msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
 					msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtonsMain()}
-					if _, err := bot.Send(msg); err != nil {
-						errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
+					if _, err := Bot.Send(msg); err != nil {
+						errorMsg(vars.HandleDefault, message.Chat.ID, err)
 						log.Println(err)
 
 						continue
@@ -144,11 +138,11 @@ var serveCmd = &cobra.Command{
 				}
 
 				if message.Command() == "description" {
-					descriptionMsg(message.Chat.ID, bot)
+					descriptionMsg(message.Chat.ID)
 				}
 
 			} else {
-				errorMsg(vars.HandleNoUser, message.Chat.ID, bot, err)
+				errorMsg(vars.HandleNoUser, message.Chat.ID, err)
 				log.Println(err)
 			}
 		}
@@ -157,44 +151,39 @@ var serveCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-
-	err := viper.UnmarshalKey("telegram", &configTelegram)
-	if err != nil {
-		return
-	}
 }
 
-func errorMsg(message string, chatId int64, bot *tgbotapi.BotAPI, err error) {
+func errorMsg(message string, chatId int64, err error) {
 	msg := tgbotapi.NewMessage(chatId, message)
-	if configTelegram.Dev {
+	if ConfigTelegram.Dev {
 		msg = tgbotapi.NewMessage(chatId, err.Error())
 	}
 
-	if _, err := bot.Send(msg); err != nil {
+	if _, err := Bot.Send(msg); err != nil {
 		log.Println(err)
 	}
 }
 
-func greetingsMsg(chatId int64, bot *tgbotapi.BotAPI) {
+func greetingsMsg(chatId int64) {
 	msg := tgbotapi.NewMessage(chatId, vars.AuthSuccessMessage)
 	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 
-	if _, err := bot.Send(msg); err != nil {
-		errorMsg(vars.HandleDefault, chatId, bot, err)
+	if _, err := Bot.Send(msg); err != nil {
+		errorMsg(vars.HandleDefault, chatId, err)
 		log.Println(err)
 
 		return
 	}
 
-	descriptionMsg(chatId, bot)
+	descriptionMsg(chatId)
 }
 
-func descriptionMsg(chatId int64, bot *tgbotapi.BotAPI) {
+func descriptionMsg(chatId int64) {
 	msg := tgbotapi.NewMessage(chatId, vars.DescriptionMessage)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtonsMain()}
 
-	if _, err := bot.Send(msg); err != nil {
-		errorMsg(vars.HandleDefault, chatId, bot, err)
+	if _, err := Bot.Send(msg); err != nil {
+		errorMsg(vars.HandleDefault, chatId, err)
 		log.Println(err)
 	}
 }
