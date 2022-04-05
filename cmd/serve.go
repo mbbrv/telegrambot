@@ -82,20 +82,23 @@ var serveCmd = &cobra.Command{
 
 			if message.Contact != nil {
 				err := mysql.UserEnrichmentByPhoneNumb(Db, message)
-				if err != nil {
-					errorMsg(vars.HandleNoUser, message.Chat.ID, bot, err)
+				if err == nil {
 					log.Println(err)
-
-					continue
 				}
 
 				auth = true
 			}
 
 			if message.Text == vars.KeyboardButtonUsername {
+				err := mysql.UserEnrichmentByUsername(Db, message)
+				if err == nil {
+					log.Println(err)
+				}
+
 				auth = true
 			}
 
+			//TODO: соеденить вместе селекты к юзеру
 			if user, ok, err := mysql.IsAuth(Db, message.Chat); ok {
 				if auth {
 					greetingsMsg(vars.AuthSucessMessage, message.Chat.ID, bot)
@@ -144,7 +147,7 @@ var serveCmd = &cobra.Command{
 				}
 
 			} else {
-				errorMsg(vars.HandleUnauth, message.Chat.ID, bot, err)
+				errorMsg(vars.HandleNoUser, message.Chat.ID, bot, err)
 				log.Println(err)
 			}
 		}

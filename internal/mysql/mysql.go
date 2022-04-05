@@ -108,3 +108,19 @@ func UserEnrichmentByPhoneNumb(DB *sql.DB, message *tgbotapi.Message) error {
 
 	return nil
 }
+
+func UserEnrichmentByUsername(DB *sql.DB, message *tgbotapi.Message) error {
+	var id int
+
+	row := DB.QueryRow(`SELECT id FROM Users WHERE username = ?`, message.Chat.UserName)
+	if err := row.Scan(&id); err != nil {
+		return err
+	}
+
+	_, err := DB.Exec(`UPDATE Users SET telegram_id = ?  WHERE id = ?`, message.From.ID, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
