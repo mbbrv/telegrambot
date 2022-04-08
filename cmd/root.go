@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"os"
-	"telegrambot/internal/mysql"
-	"telegrambot/internal/telegram"
+	"telegrambot/internal/mysql/config"
+	"telegrambot/internal/telegram/config"
 )
 
 // rootCmd represents the base command when called without any subcommands
