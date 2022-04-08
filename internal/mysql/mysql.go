@@ -5,7 +5,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strconv"
-	"telegrambot/internal/care/helpers"
+	"telegrambot/internal/helpers"
 	"time"
 )
 

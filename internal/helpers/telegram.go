@@ -3,9 +3,12 @@ package helpers
 import (
 	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"telegrambot/internal/serve/vars"
+	"telegrambot/internal/vars"
 )
 
+//GetKeyboardButtonsStart используется
+//для получения стартовых кнопок
+//аутентификации пользователя.
 func GetKeyboardButtonsStart() [][]tgbotapi.KeyboardButton {
 	return [][]tgbotapi.KeyboardButton{
 		{tgbotapi.NewKeyboardButtonContact(vars.KeyboardButtonMobilePhone)},
@@ -13,6 +16,8 @@ func GetKeyboardButtonsStart() [][]tgbotapi.KeyboardButton {
 	}
 }
 
+//GetInlineButtonsMain используется для получения кнопок
+// получения записи и отключения/включения отправки ухода.
 func GetInlineButtonsMain() [][]tgbotapi.InlineKeyboardButton {
 	return [][]tgbotapi.InlineKeyboardButton{
 		{tgbotapi.NewInlineKeyboardButtonData(vars.InlineButtonAppointment, "appointment")},
@@ -20,6 +25,7 @@ func GetInlineButtonsMain() [][]tgbotapi.InlineKeyboardButton {
 	}
 }
 
+//GetMessage используется для извлечения сущности Message в апдейте.
 func GetMessage(update tgbotapi.Update) (*tgbotapi.Message, error) {
 	if update.Message != nil {
 		return update.Message, nil
@@ -30,4 +36,12 @@ func GetMessage(update tgbotapi.Update) (*tgbotapi.Message, error) {
 	}
 
 	return nil, errors.New("error while getting Message")
+}
+
+//GetTimeDivisionInSeconds Половина времени в секундах от времени для сна
+func GetTimeDivisionInSeconds() int {
+	if vars.TimeToSleep%2 == 1 {
+		return vars.TimeToSleep/2*60 + 30
+	}
+	return vars.TimeToSleep / 2 * 60
 }

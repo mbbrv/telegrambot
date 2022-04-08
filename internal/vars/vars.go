@@ -1,9 +1,7 @@
 package vars
 
-const HandleKeyboard = "handleKeyboard"
-const HandleUnauth = "Вы не авторизованы("
-const HandleNoUser = "Пользователь не найден"
-const HandleDefault = "Ошибка отправки сообщения"
+const ErrorNoUser = "Пользователь не найден"
+const ErrorDefault = "Ошибка отправки сообщения"
 
 const CareDisabled = "careDisabled"
 const CareEnabled = "careEnabled"
@@ -18,3 +16,5 @@ const InlineButtonCare = "Уход вкл/выкл"
 
 const KeyboardButtonMobilePhone = "Номер телефона"
 const KeyboardButtonUsername = "Имя пользователя"
+
+const TimeToSleep = 5
