@@ -3,7 +3,7 @@ package helpers
 import (
 	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"telegrambot/internal/vars"
+	"telegrambot/internal/serve/vars"
 )
 
 func GetKeyboardButtonsStart() [][]tgbotapi.KeyboardButton {
