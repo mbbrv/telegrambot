@@ -58,12 +58,13 @@ func init() {
 		log.Fatalln(err)
 	}
 
-	Db, err = sql.Open("mysql", configDB.User+":"+configDB.Password+"@/"+configDB.DB)
+	Db, err = sql.Open("mysql", configDB.User+":"+configDB.Password+"@/"+configDB.DB+"?parseTime=true")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	Bot, err = tgbotapi.NewBotAPI(ConfigTelegram.Token)
+	Bot.Debug = ConfigTelegram.Dev
 	if err != nil {
 		panic(err)
 	}

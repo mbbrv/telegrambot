@@ -18,10 +18,6 @@ var serveCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		var auth = false
-
-		Bot.Debug = ConfigTelegram.Dev
-
 		updateConfig := tgbotapi.NewUpdate(0)
 
 		updateConfig.Timeout = 30
@@ -29,121 +25,8 @@ var serveCmd = &cobra.Command{
 		updates := Bot.GetUpdatesChan(updateConfig)
 
 		for update := range updates {
-
-			message, err := helpers.GetMessage(update)
-			if err != nil {
-				//errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
-				log.Println(err)
-
-				continue
-			}
-
-			if message.Text == "/start" {
-
-				msg := tgbotapi.NewMessage(message.Chat.ID, vars.WelcomeMessage)
-				msg.ReplyMarkup = tgbotapi.ReplyKeyboardMarkup{Keyboard: helpers.GetKeyboardButtonsStart()}
-
-				if _, err := Bot.Send(msg); err != nil {
-					errorMsg(vars.HandleDefault, update.Message.Chat.ID, err)
-					log.Println(err)
-
-					continue
-				}
-
-				continue
-			}
-
-			if !message.IsCommand() && update.CallbackQuery == nil && message.Contact == nil && message.Text != vars.KeyboardButtonUsername {
-
-				//Возможно, ничего не надо отправлять при удалении сообщения
-				//msg := tgbotapi.NewMessage(message.Chat.ID, vars.HandleKeyboard)
-				//if _, err := bot.Send(msg); err != nil {
-				//	errorMsg(message.Chat.ID, bot, err)
-				//	log.Println(err)
-				//
-				//	continue
-				//}
-
-				del := tgbotapi.NewDeleteMessage(message.Chat.ID, message.MessageID)
-				if _, err := Bot.Send(del); err != nil {
-					log.Println(err)
-
-					continue
-				}
-
-				continue
-			}
-
-			if message.Contact != nil {
-				err := mysql.UserEnrichmentByPhoneNumb(Db, message)
-				if err == nil {
-					log.Println(err)
-				}
-
-				auth = true
-			}
-
-			if message.Text == vars.KeyboardButtonUsername {
-				err := mysql.UserEnrichmentByUsername(Db, message)
-				if err == nil {
-					log.Println(err)
-				}
-
-				auth = true
-			}
-
-			//TODO: объединить вместе селекты к юзеру
-			if user, ok, err := mysql.IsAuth(Db, message.Chat); ok {
-				if auth {
-					greetingsMsg(message.Chat.ID)
-					auth = false
-				}
-
-				if update.CallbackData() == "care" {
-					err := user.ChangeCareStatus(Db)
-					if err != nil {
-						errorMsg(vars.HandleDefault, message.Chat.ID, err)
-						log.Println(err)
-
-						continue
-					}
-
-					textMessage := user.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled)
-					msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
-					if _, err := Bot.Send(msg); err != nil {
-						errorMsg(vars.HandleDefault, message.Chat.ID, err)
-						log.Println(err)
-
-						continue
-					}
-				}
-
-				if update.CallbackData() == "appointment" {
-					textMessage, err := user.GetPreparedAppointment(Db)
-					if err != nil {
-						errorMsg(vars.HandleDefault, message.Chat.ID, err)
-						log.Println(err)
-
-						continue
-					}
-
-					msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
-					msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtonsMain()}
-					if _, err := Bot.Send(msg); err != nil {
-						errorMsg(vars.HandleDefault, message.Chat.ID, err)
-						log.Println(err)
-
-						continue
-					}
-				}
-
-				if message.Command() == "description" {
-					descriptionMsg(message.Chat.ID)
-				}
-
-			} else {
-				errorMsg(vars.HandleNoUser, message.Chat.ID, err)
-				log.Println(err)
+			if errMsg, err := process(update); err != nil {
+				errorMsg(errMsg, update.Message.Chat.ID, err)
 			}
 		}
 	},
@@ -151,6 +34,115 @@ var serveCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
+}
+
+func process(update tgbotapi.Update) (string, error) {
+	var auth = false
+	message, err := helpers.GetMessage(update)
+	if err != nil {
+		//errorMsg(vars.HandleDefault, message.Chat.ID, bot, err)
+		return vars.HandleDefault, err
+	}
+
+	if message.Text == "/start" {
+
+		msg := tgbotapi.NewMessage(message.Chat.ID, vars.WelcomeMessage)
+		msg.ReplyMarkup = tgbotapi.ReplyKeyboardMarkup{Keyboard: helpers.GetKeyboardButtonsStart()}
+
+		if _, err := Bot.Send(msg); err != nil {
+			errorMsg(vars.HandleDefault, update.Message.Chat.ID, err)
+			log.Println(err)
+
+			return vars.HandleDefault, err
+		}
+
+		return "", nil
+	}
+
+	if !message.IsCommand() && update.CallbackQuery == nil && message.Contact == nil && message.Text != vars.KeyboardButtonUsername {
+
+		//Возможно, ничего не надо отправлять при удалении сообщения
+		//msg := tgbotapi.NewMessage(message.Chat.ID, vars.HandleKeyboard)
+		//if _, err := bot.Send(msg); err != nil {
+		//	errorMsg(message.Chat.ID, bot, err)
+		//	log.Println(err)
+		//
+		//	continue
+		//}
+
+		del := tgbotapi.NewDeleteMessage(message.Chat.ID, message.MessageID)
+		if _, err := Bot.Send(del); err != nil {
+			log.Println(err)
+
+			return "", nil
+		}
+
+		return "", nil
+	}
+
+	if message.Contact != nil {
+		err := mysql.UserEnrichmentByPhoneNumb(Db, message)
+		if err == nil {
+			log.Println(err)
+		}
+
+		auth = true
+	}
+
+	if message.Text == vars.KeyboardButtonUsername {
+		err := mysql.UserEnrichmentByUsername(Db, message)
+		if err == nil {
+			log.Println(err)
+		}
+
+		auth = true
+	}
+
+	//TODO: объединить вместе селекты к юзеру
+	if user, ok, err := mysql.IsAuth(Db, message.Chat); ok {
+		if auth {
+			greetingsMsg(message.Chat.ID)
+		}
+
+		if update.CallbackData() == "care" {
+			err := user.ChangeCareStatus(Db)
+			if err != nil {
+				log.Println(err)
+				return vars.HandleDefault, err
+			}
+
+			textMessage := user.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled)
+			msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
+			if _, err := Bot.Send(msg); err != nil {
+				log.Println(err)
+				return vars.HandleDefault, err
+			}
+		}
+
+		if update.CallbackData() == "appointment" {
+			textMessage, err := user.GetPreparedAppointment(Db)
+			if err != nil {
+				log.Println(err)
+				return vars.HandleDefault, err
+			}
+
+			msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
+			msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtonsMain()}
+			if _, err := Bot.Send(msg); err != nil {
+				log.Println(err)
+				return vars.HandleDefault, err
+			}
+		}
+
+		if message.Command() == "description" {
+			descriptionMsg(message.Chat.ID)
+		}
+
+	} else {
+		log.Println(err)
+		return vars.HandleNoUser, err
+	}
+	return "", nil
 }
 
 func errorMsg(message string, chatId int64, err error) {
