@@ -26,6 +26,7 @@ func IsAuth(DB *sql.DB, from *tgbotapi.Chat) (User, bool, error) {
 		&user.PhoneNumber,
 		&user.TelegramId,
 		&user.ChatId,
+		&user.FirstName,
 	); err != nil {
 		return User{}, false, err
 	}
@@ -80,6 +81,7 @@ func GetAllUsersWithCare(DB *sql.DB) ([]User, error) {
 			&user.PhoneNumber,
 			&user.TelegramId,
 			&user.ChatId,
+			&user.FirstName,
 		); err != nil {
 			return nil, err
 		}
