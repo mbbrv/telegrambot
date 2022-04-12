@@ -10,7 +10,6 @@ import (
 type Care struct {
 	Id              int
 	UserId          int
-	Name            sql.NullString
 	Description     sql.NullString
 	Url             sql.NullString
 	PhotoDictionary sql.NullString
@@ -57,7 +56,6 @@ func (user User) getCurrentCare(DB *sql.DB) ([]Care, error) {
 		if err = rows.Scan(
 			&care.Id,
 			&care.UserId,
-			&care.Name,
 			&care.Description,
 			&care.Url,
 			&care.PhotoDictionary,
@@ -76,7 +74,7 @@ func (user User) getCurrentCare(DB *sql.DB) ([]Care, error) {
 }
 
 func (user *User) ChangeCareStatus(DB *sql.DB) error {
-	_, err := DB.Exec(`UPDATE Users SET care = ? WHERE id = ?`, !user.Care, user.Id)
+	_, err := DB.Exec(`UPDATE User SET care = ? WHERE id = ?`, !user.Care, user.Id)
 	if err != nil {
 		return err
 	}

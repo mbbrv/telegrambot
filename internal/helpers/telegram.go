@@ -38,6 +38,10 @@ func GetMessage(update tgbotapi.Update) (*tgbotapi.Message, error) {
 	return nil, errors.New("error while getting Message")
 }
 
+func GetGreetingsMessage(firstName string) string {
+	return firstName + ", \n\n" + vars.GreetingsMessage
+}
+
 //GetTimeDivisionInSeconds Половина времени в секундах от времени для сна
 func GetTimeDivisionInSeconds() int {
 	if vars.TimeToSleep%2 == 1 {

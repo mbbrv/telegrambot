@@ -18,7 +18,7 @@ type User struct {
 func IsAuth(DB *sql.DB, from *tgbotapi.Chat) (User, bool, error) {
 	var user User
 
-	row := DB.QueryRow(`SELECT * FROM Users WHERE username = ? OR telegram_id = ?`, from.UserName, from.ID)
+	row := DB.QueryRow(`SELECT * FROM User WHERE username = ? OR telegram_id = ?`, from.UserName, from.ID)
 	if err := row.Scan(
 		&user.Id,
 		&user.Username,
@@ -37,12 +37,12 @@ func IsAuth(DB *sql.DB, from *tgbotapi.Chat) (User, bool, error) {
 func UserEnrichmentByPhoneNumb(DB *sql.DB, message *tgbotapi.Message) error {
 	var id int
 
-	row := DB.QueryRow(`SELECT id FROM Users WHERE phone_number = ?`, message.Contact.PhoneNumber)
+	row := DB.QueryRow(`SELECT id FROM User WHERE phone_number = ?`, message.Contact.PhoneNumber)
 	if err := row.Scan(&id); err != nil {
 		return err
 	}
 
-	_, err := DB.Exec(`UPDATE Users SET username = ?, telegram_id = ?, chat_id = ?, first_name = ?  WHERE id = ?`, message.From.UserName, message.From.ID, message.Chat.ID, message.From.FirstName, id)
+	_, err := DB.Exec(`UPDATE User SET username = ?, telegram_id = ?, chat_id = ?, first_name = ?  WHERE id = ?`, message.From.UserName, message.From.ID, message.Chat.ID, message.From.FirstName, id)
 	if err != nil {
 		return err
 	}
@@ -53,12 +53,12 @@ func UserEnrichmentByPhoneNumb(DB *sql.DB, message *tgbotapi.Message) error {
 func UserEnrichmentByUsername(DB *sql.DB, message *tgbotapi.Message) error {
 	var id int
 
-	row := DB.QueryRow(`SELECT id FROM Users WHERE username = ?`, message.Chat.UserName)
+	row := DB.QueryRow(`SELECT id FROM User WHERE username = ?`, message.Chat.UserName)
 	if err := row.Scan(&id); err != nil {
 		return err
 	}
 
-	_, err := DB.Exec(`UPDATE Users SET telegram_id = ?, chat_id = ?, first_name = ?  WHERE id = ?`, message.From.ID, message.Chat.ID, message.From.FirstName, id)
+	_, err := DB.Exec(`UPDATE User SET telegram_id = ?, chat_id = ?, first_name = ?  WHERE id = ?`, message.From.ID, message.Chat.ID, message.From.FirstName, id)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func UserEnrichmentByUsername(DB *sql.DB, message *tgbotapi.Message) error {
 
 func GetAllUsersWithCare(DB *sql.DB) ([]User, error) {
 	var users []User
-	rows, err := DB.Query(`SELECT * FROM Users WHERE care = ?`, 1)
+	rows, err := DB.Query(`SELECT * FROM User WHERE care = ?`, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -93,4 +93,14 @@ func GetAllUsersWithCare(DB *sql.DB) ([]User, error) {
 	}
 
 	return users, err
+}
+
+func (user User) UpdateFirstName(DB *sql.DB, message *tgbotapi.Message) error {
+	if user.FirstName.String != message.From.FirstName {
+		_, err := DB.Exec(`UPDATE User SET first_name = ? WHERE id = ?`, message.From.FirstName, user.Id)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

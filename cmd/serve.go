@@ -86,8 +86,12 @@ func processServe(update tgbotapi.Update) (string, error) {
 
 	//TODO: объединить вместе селекты к юзеру
 	if user, ok, err := mysql.IsAuth(Db, message.Chat); ok {
+		if err := user.UpdateFirstName(Db, message); err != nil {
+			return "", err
+		}
+
 		if auth {
-			err := greetingsMsg(message.Chat.ID)
+			err := greetingsMsg(message.Chat.ID, user.FirstName.String)
 			if err != nil {
 				log.Println(err)
 				return vars.ErrorDefault, err
@@ -150,8 +154,8 @@ func errorMsg(message string, chatId int64, err error) {
 	}
 }
 
-func greetingsMsg(chatId int64) error {
-	msg := tgbotapi.NewMessage(chatId, vars.AuthSuccessMessage)
+func greetingsMsg(chatId int64, firstName string) error {
+	msg := tgbotapi.NewMessage(chatId, helpers.GetGreetingsMessage(firstName))
 	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 
 	if _, err := Bot.Send(msg); err != nil {
