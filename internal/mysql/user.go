@@ -7,11 +7,12 @@ import (
 
 type User struct {
 	Id          int
-	Username    string
+	Username    sql.NullString
 	Care        bool
 	PhoneNumber sql.NullString
 	TelegramId  sql.NullInt64
 	ChatId      sql.NullInt64
+	FirstName   sql.NullString
 }
 
 func IsAuth(DB *sql.DB, from *tgbotapi.Chat) (User, bool, error) {
@@ -40,7 +41,7 @@ func UserEnrichmentByPhoneNumb(DB *sql.DB, message *tgbotapi.Message) error {
 		return err
 	}
 
-	_, err := DB.Exec(`UPDATE Users SET username = ?, telegram_id = ?, chat_id = ?  WHERE id = ?`, message.From.UserName, message.From.ID, message.Chat.ID, id)
+	_, err := DB.Exec(`UPDATE Users SET username = ?, telegram_id = ?, chat_id = ?, first_name = ?  WHERE id = ?`, message.From.UserName, message.From.ID, message.Chat.ID, message.From.FirstName, id)
 	if err != nil {
 		return err
 	}
@@ -56,7 +57,7 @@ func UserEnrichmentByUsername(DB *sql.DB, message *tgbotapi.Message) error {
 		return err
 	}
 
-	_, err := DB.Exec(`UPDATE Users SET telegram_id = ?, chat_id = ?  WHERE id = ?`, message.From.ID, message.Chat.ID, id)
+	_, err := DB.Exec(`UPDATE Users SET telegram_id = ?, chat_id = ?, first_name = ?  WHERE id = ?`, message.From.ID, message.Chat.ID, message.From.FirstName, id)
 	if err != nil {
 		return err
 	}
