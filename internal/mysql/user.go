@@ -97,10 +97,28 @@ func GetAllUsersWithCare(DB *sql.DB) ([]User, error) {
 
 func (user User) UpdateFirstName(DB *sql.DB, message *tgbotapi.Message) error {
 	if user.FirstName.String != message.From.FirstName {
-		_, err := DB.Exec(`UPDATE User SET first_name = ? WHERE id = ?`, message.From.FirstName, user.Id)
+		_, err := DB.Exec(`UPDATE User SET first_name = ? WHERE id = ?`, message.Chat.FirstName, user.Id)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (user *User) ChangeCareStatus(DB *sql.DB) error {
+	_, err := DB.Exec(`UPDATE User SET care = ? WHERE id = ?`, !user.Care, user.Id)
+	if err != nil {
+		return err
+	}
+
+	user.Care = !user.Care
+	return nil
+}
+
+func (user *User) GetChangeCareStatus(disabled string, enabled string) string {
+	if user.Care {
+		return enabled
+	}
+
+	return disabled
 }

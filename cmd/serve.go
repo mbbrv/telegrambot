@@ -7,6 +7,8 @@ import (
 	"log"
 	"telegrambot/internal/helpers"
 	"telegrambot/internal/mysql"
+	"telegrambot/internal/telegram/keyboards"
+	router2 "telegrambot/internal/telegram/router"
 	"telegrambot/internal/vars"
 )
 
@@ -37,15 +39,14 @@ func init() {
 
 func processServe(update tgbotapi.Update) (string, error) {
 	var auth = false
-	message, err := helpers.GetMessage(update)
-	if err != nil {
-		return vars.ErrorDefault, err
+	message := helpers.GetMessage(&update)
+	if message == nil {
+		return "", nil
 	}
-
 	if message.Text == "/start" {
 
 		msg := tgbotapi.NewMessage(message.Chat.ID, vars.WelcomeMessage)
-		msg.ReplyMarkup = tgbotapi.ReplyKeyboardMarkup{Keyboard: helpers.GetKeyboardButtonsStart()}
+		msg.ReplyMarkup = tgbotapi.ReplyKeyboardMarkup{Keyboard: keyboards.GetKeyboardButtonsStart()}
 
 		if _, err := Bot.Send(msg); err != nil {
 			log.Println(err)
@@ -86,54 +87,16 @@ func processServe(update tgbotapi.Update) (string, error) {
 
 	//TODO: объединить вместе селекты к юзеру
 	if user, ok, err := mysql.IsAuth(Db, message.Chat); ok {
-		if err := user.UpdateFirstName(Db, message); err != nil {
-			return "", err
-		}
-
-		if auth {
-			err := greetingsMsg(message.Chat.ID, user.FirstName.String)
-			if err != nil {
-				log.Println(err)
-				return vars.ErrorDefault, err
+		if update.CallbackQuery == nil {
+			if err := user.UpdateFirstName(Db, message); err != nil {
+				return "", err
 			}
 		}
 
-		if update.CallbackData() == "care" {
-			err := user.ChangeCareStatus(Db)
-			if err != nil {
-				log.Println(err)
-				return vars.ErrorDefault, err
-			}
-
-			textMessage := user.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled)
-			msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
-			if _, err := Bot.Send(msg); err != nil {
-				log.Println(err)
-				return vars.ErrorDefault, err
-			}
-		}
-
-		if update.CallbackData() == "appointment" {
-			textMessage, err := user.GetPreparedAppointment(Db)
-			if err != nil {
-				log.Println(err)
-				return vars.ErrorDefault, err
-			}
-
-			msg := tgbotapi.NewMessage(message.Chat.ID, textMessage)
-			msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtonsMain()}
-			if _, err := Bot.Send(msg); err != nil {
-				log.Println(err)
-				return vars.ErrorDefault, err
-			}
-		}
-
-		if message.Command() == "description" {
-			err := descriptionMsg(message.Chat.ID)
-			if err != nil {
-				log.Println(err)
-				return vars.ErrorDefault, err
-			}
+		router := router2.NewRouter(&user, &update, Bot, Db, auth)
+		if errMsg, err := router.Route(); err != nil {
+			log.Println(err)
+			return errMsg, err
 		}
 
 	} else {
@@ -152,30 +115,4 @@ func errorMsg(message string, chatId int64, err error) {
 	if _, err := Bot.Send(msg); err != nil {
 		log.Println(err)
 	}
-}
-
-func greetingsMsg(chatId int64, firstName string) error {
-	msg := tgbotapi.NewMessage(chatId, helpers.GetGreetingsMessage(firstName))
-	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-
-	if _, err := Bot.Send(msg); err != nil {
-		return err
-	}
-
-	err := descriptionMsg(chatId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func descriptionMsg(chatId int64) error {
-	msg := tgbotapi.NewMessage(chatId, vars.DescriptionMessage)
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: helpers.GetInlineButtonsMain()}
-
-	if _, err := Bot.Send(msg); err != nil {
-		return err
-	}
-
-	return nil
 }
