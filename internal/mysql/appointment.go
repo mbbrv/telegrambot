@@ -2,12 +2,15 @@ package mysql
 
 import (
 	"database/sql"
+	"github.com/nyaruka/phonenumbers"
+	"strconv"
 	"time"
 )
 
 type Appointment struct {
 	Id          int
 	UserId      int
+	DoctorId    int
 	DateTime    sql.NullString
 	Place       sql.NullString
 	Description sql.NullString
@@ -19,20 +22,31 @@ func (user User) GetPreparedAppointment(DB *sql.DB) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	doctor, err := appointment.GetDoctor(DB)
+	if err != nil {
+		return "", err
+	}
 	//timeAppointment, _ := time.Parse("2006-01-02T15:04:05Z", appointment.DateTime.String)
 	//timeNow.Before()
-	return prepareAppointment(&appointment), nil
+	return prepareAppointment(&appointment, &doctor), nil
 }
 
-func prepareAppointment(appointment *Appointment) string {
+func prepareAppointment(appointment *Appointment, doctor *Doctor) string {
 	parseTime, _ := time.Parse("2006-01-02T15:04:05Z", appointment.DateTime.String)
+	phoneNumber, _ := phonenumbers.Parse(doctor.PhoneNumber.String, "RU")
 
-	var res = "<b>Ближайшая запись:</b>\n\n\n" +
-		"💉<b>Процедура:</b> " + appointment.Description.String + "\n\n" +
-		"⏰<b>Дата и время:</b> " + parseTime.Format("15:04 02/01/2006") + "\n\n" +
+	var res = "<b>Ваша ближайшая запись:</b>\n\n\n" +
+		"🧖‍♀️<b>Процедура:</b> " + appointment.Description.String + "\n\n" +
+		"💵<b>Стоимость:</b> " + strconv.FormatInt(appointment.Cost.Int64, 10) + " ₽\n\n" +
+		"⏰<b>Дата и время:</b> " + parseTime.Format("15:04 02-01-2006") + "\n\n" +
 		"🏥<b>Место:</b> " + appointment.Place.String + "\n\n" +
-		"👩🏻‍⚕️<b>Врач:</b> test" + "\n\n" +
-		"📞<b>Контакты для связи:</b> test"
+		"👩🏻‍⚕️<b>Врач:</b> " + doctor.Name.String + "\n\n" +
+		"=============================" + "\n\n" +
+		"Контакты врача:" + "\n\n" +
+		"	📱<b>Telegram:</b> " + doctor.TelegramUsername.String + "\n\n" +
+		"	📱<b>WhatsApp:</b> " + doctor.WhatsAppUrl.String + "\n\n" +
+		"	📞<b>Экстренная связь:</b> " + phonenumbers.Format(phoneNumber, phonenumbers.INTERNATIONAL)
 
 	return res
 }
@@ -48,6 +62,7 @@ func (user User) getAppointment(DB *sql.DB) (Appointment, error) {
 	if err := row.Scan(
 		&appointment.Id,
 		&appointment.UserId,
+		&appointment.DoctorId,
 		&appointment.DateTime,
 		&appointment.Place,
 		&appointment.Description,
