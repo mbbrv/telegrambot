@@ -8,7 +8,6 @@ import (
 	"telegrambot/internal/helpers"
 	"telegrambot/internal/mysql"
 	"telegrambot/internal/telegram/keyboards"
-	"time"
 )
 
 type Router interface {
@@ -78,7 +77,6 @@ func (r router) Route() (string, error) {
 				return errMsg, err
 			}
 		}
-		time.Sleep(1 * time.Second)
 	}
 
 	if r.message.Command() == "description" {

@@ -32,7 +32,32 @@ func GetTimeDivisionInSeconds() int {
 }
 
 func GetTimeSetMessage(dayTime string) string {
-	return vars.DailySetTimeMessage + dayTime + " процедур."
+	var res = ""
+
+	if dayTime == "morning" {
+		res = "утренних"
+	} else {
+		res = "вечерних"
+	}
+	return vars.DailySetTimeMessage + res + " процедур."
+}
+
+func GetTimeChangedSuccessMessage(dayTime string) string {
+	var res = ""
+
+	if dayTime == "morning" {
+		res = "утренних"
+	} else {
+		res = "вечерних"
+	}
+
+	return vars.TimeChangedSuccessMessage + res + " напоминаний!"
+}
+
+func GetPreparedDailyCareMessage(morningTime string, eveningTime string) string {
+	return vars.DailyMessage + "\n\n" +
+		"<b>Время утренних процедур: " + "</b>" + morningTime + "\n" +
+		"<b>Время вечерних процедур: " + "</b>" + eveningTime
 }
 
 func IncreaseHours(hours int) int {

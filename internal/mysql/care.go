@@ -2,7 +2,7 @@ package mysql
 
 import (
 	"database/sql"
-	"log"
+	"strings"
 	"telegrambot/internal/helpers"
 	"time"
 )
@@ -15,6 +15,11 @@ type Care struct {
 	PhotoDictionary sql.NullString
 	Time            sql.NullString
 	DayTime         sql.NullString
+}
+
+type TimeCares struct {
+	Morning string
+	Evening string
 }
 
 func (user User) GetPreparedCurrentCare(DB *sql.DB) ([]string, error) {
@@ -51,7 +56,6 @@ func (user User) getCurrentCare(DB *sql.DB) ([]Care, error) {
 		return nil, err
 	}
 	for rows.Next() {
-		log.Println("ya tut")
 		var care Care
 		if err = rows.Scan(
 			&care.Id,
@@ -90,6 +94,37 @@ func (user *User) GetCareByDayTime(dayTime string, DB *sql.DB) (*Care, error) {
 	}
 
 	return &care, nil
+}
+
+func (user *User) GetTimeOfCares(DB *sql.DB) (TimeCares, error) {
+	var timeCares TimeCares
+
+	rows, err := DB.Query(`SELECT * from Care WHERE user_id = ?`, user.Id)
+	if err != nil {
+		return TimeCares{}, err
+	}
+	for rows.Next() {
+		var care Care
+		if err = rows.Scan(
+			&care.Id,
+			&care.UserId,
+			&care.Description,
+			&care.Url,
+			&care.PhotoDictionary,
+			&care.Time,
+			&care.DayTime,
+		); err != nil {
+			return TimeCares{}, err
+		}
+		if care.DayTime.String == "morning" {
+			morning := strings.Replace(care.Time.String, ":00", "", 1)
+			timeCares.Morning = morning
+		} else {
+			evening := strings.Replace(care.Time.String, ":00", "", 1)
+			timeCares.Evening = evening
+		}
+	}
+	return timeCares, nil
 }
 
 func (user *User) SetTimeCare(hours string, minutes string, dayTime string, DB *sql.DB) error {

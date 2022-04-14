@@ -18,10 +18,17 @@ func GetKeyboardButtonsStart() [][]tgbotapi.KeyboardButton {
 
 //GetInlineButtonsMain используется для получения кнопок
 // получения записи и отключения/включения отправки ухода.
-func GetInlineButtonsMain() [][]tgbotapi.InlineKeyboardButton {
+func GetInlineButtonsMain(care bool) [][]tgbotapi.InlineKeyboardButton {
+	var res = ""
+	if care {
+		res = "выкл"
+	} else {
+		res = "вкл"
+	}
+
 	return [][]tgbotapi.InlineKeyboardButton{
 		{tgbotapi.NewInlineKeyboardButtonData(vars.InlineButtonAppointment, "appointment")},
-		{tgbotapi.NewInlineKeyboardButtonData(vars.InlineButtonCare, "care"), tgbotapi.NewInlineKeyboardButtonData(vars.InlineButtonDailyCare, "daily")},
+		{tgbotapi.NewInlineKeyboardButtonData(vars.InlineButtonCare+res, "care"), tgbotapi.NewInlineKeyboardButtonData(vars.InlineButtonDailyCare, "daily")},
 	}
 }
 

@@ -26,8 +26,9 @@ var serveCmd = &cobra.Command{
 		updates := Bot.GetUpdatesChan(updateConfig)
 
 		for update := range updates {
+			message := helpers.GetMessage(&update)
 			if errMsg, err := processServe(update); err != nil {
-				errorMsg(errMsg, update.Message.Chat.ID, err)
+				errorMsg(errMsg, message.Chat.ID, err)
 			}
 		}
 	},
@@ -47,6 +48,7 @@ func processServe(update tgbotapi.Update) (string, error) {
 
 		msg := tgbotapi.NewMessage(message.Chat.ID, vars.WelcomeMessage)
 		msg.ReplyMarkup = tgbotapi.ReplyKeyboardMarkup{Keyboard: keyboards.GetKeyboardButtonsStart()}
+		msg.ParseMode = "HTML"
 
 		if _, err := Bot.Send(msg); err != nil {
 			log.Println(err)
