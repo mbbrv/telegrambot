@@ -14,7 +14,7 @@ type Care struct {
 	Url             sql.NullString
 	PhotoDictionary sql.NullString
 	Time            sql.NullString
-	TypeCare        sql.NullString
+	DayTime         sql.NullString
 }
 
 func (user User) GetPreparedCurrentCare(DB *sql.DB) ([]string, error) {
@@ -60,7 +60,7 @@ func (user User) getCurrentCare(DB *sql.DB) ([]Care, error) {
 			&care.Url,
 			&care.PhotoDictionary,
 			&care.Time,
-			&care.TypeCare,
+			&care.DayTime,
 		); err != nil {
 			return nil, err
 		}
@@ -73,20 +73,32 @@ func (user User) getCurrentCare(DB *sql.DB) ([]Care, error) {
 	return cares, nil
 }
 
-func (user *User) ChangeCareStatus(DB *sql.DB) error {
-	_, err := DB.Exec(`UPDATE User SET care = ? WHERE id = ?`, !user.Care, user.Id)
+func (user *User) GetCareByDayTime(dayTime string, DB *sql.DB) (*Care, error) {
+	var care Care
+
+	row := DB.QueryRow(`SELECT * FROM Care WHERE user_id = ? and day_time = ?`, user.Id, dayTime)
+	if err := row.Scan(
+		&care.Id,
+		&care.UserId,
+		&care.Description,
+		&care.Url,
+		&care.PhotoDictionary,
+		&care.Time,
+		&care.DayTime,
+	); err != nil {
+		return nil, err
+	}
+
+	return &care, nil
+}
+
+func (user *User) SetTimeCare(hours string, minutes string, dayTime string, DB *sql.DB) error {
+	timeFormat := hours + ":" + minutes + ":00"
+	_, err := DB.Exec(`UPDATE Care SET time = ? WHERE user_id = ? AND day_time = ?`, timeFormat, user.Id, dayTime)
 	if err != nil {
 		return err
 	}
 
 	user.Care = !user.Care
 	return nil
-}
-
-func (user *User) GetChangeCareStatus(disabled string, enabled string) string {
-	if user.Care {
-		return enabled
-	}
-
-	return disabled
 }
