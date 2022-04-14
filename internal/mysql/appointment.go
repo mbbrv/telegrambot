@@ -2,12 +2,15 @@ package mysql
 
 import (
 	"database/sql"
+	"github.com/nyaruka/phonenumbers"
+	"strconv"
 	"time"
 )
 
-type Appointments struct {
+type Appointment struct {
 	Id          int
 	UserId      int
+	DoctorId    int
 	DateTime    sql.NullString
 	Place       sql.NullString
 	Description sql.NullString
@@ -15,46 +18,58 @@ type Appointments struct {
 }
 
 func (user User) GetPreparedAppointment(DB *sql.DB) (string, error) {
-	appointments, err := user.getAppointment(DB)
+	appointment, err := user.getAppointment(DB)
 	if err != nil {
 		return "", err
 	}
-	//timeAppointment, _ := time.Parse("2006-01-02T15:04:05Z", appointments.DateTime.String)
+
+	doctor, err := appointment.GetDoctor(DB)
+	if err != nil {
+		return "", err
+	}
+	//timeAppointment, _ := time.Parse("2006-01-02T15:04:05Z", appointment.DateTime.String)
 	//timeNow.Before()
-	return prepareAppointment(&appointments), nil
+	return prepareAppointment(&appointment, &doctor), nil
 }
 
-func prepareAppointment(appointments *Appointments) string {
-	parseTime, _ := time.Parse("2006-01-02T15:04:05Z", appointments.DateTime.String)
+func prepareAppointment(appointment *Appointment, doctor *Doctor) string {
+	parseTime, _ := time.Parse("2006-01-02T15:04:05Z", appointment.DateTime.String)
+	phoneNumber, _ := phonenumbers.Parse(doctor.PhoneNumber.String, "RU")
 
-	var res = "<b>Ближайшая запись:</b>\n\n\n" +
-		"💉<b>Процедура:</b> " + appointments.Description.String + "\n\n" +
-		"⏰<b>Дата и время:</b> " + parseTime.Format("15:04 02/01/2006") + "\n\n" +
-		"🏥<b>Место:</b> " + appointments.Place.String + "\n\n" +
-		"👩🏻‍⚕️<b>Врач:</b> test" + "\n\n" +
-		"📞<b>Контакты для связи:</b> test"
+	var res = "<b>Ваша ближайшая запись:</b>\n\n\n" +
+		"🧖‍♀️<b>Процедура:</b> " + appointment.Description.String + "\n\n" +
+		"💵<b>Стоимость:</b> " + strconv.FormatInt(appointment.Cost.Int64, 10) + " ₽\n\n" +
+		"⏰<b>Дата и время:</b> " + parseTime.Format("15:04 02-01-2006") + "\n\n" +
+		"🏥<b>Место:</b> " + appointment.Place.String + "\n\n" +
+		"👩🏻‍⚕️<b>Врач:</b> " + doctor.Name.String + "\n\n" +
+		"=============================" + "\n\n" +
+		"Контакты врача:" + "\n\n" +
+		"	📱<b>Telegram:</b> " + doctor.TelegramUsername.String + "\n\n" +
+		"	📱<b>WhatsApp:</b> " + doctor.WhatsAppUrl.String + "\n\n" +
+		"	📞<b>Экстренная связь:</b> " + phonenumbers.Format(phoneNumber, phonenumbers.INTERNATIONAL)
 
 	return res
 }
 
-func (user User) getAppointment(DB *sql.DB) (Appointments, error) {
-	var appointments Appointments
+func (user User) getAppointment(DB *sql.DB) (Appointment, error) {
+	var appointment Appointment
 
-	row := DB.QueryRow(`SELECT * FROM Appointments WHERE user_id = ? AND datetime >= ? ORDER by datetime DESC LIMIT 1`, user.Id, time.Now())
+	row := DB.QueryRow(`SELECT * FROM Appointment WHERE user_id = ? AND datetime >= ? ORDER by datetime DESC LIMIT 1`, user.Id, time.Now())
 	if row.Err() != nil {
-		return Appointments{}, row.Err()
+		return Appointment{}, row.Err()
 	}
 
 	if err := row.Scan(
-		&appointments.Id,
-		&appointments.UserId,
-		&appointments.DateTime,
-		&appointments.Place,
-		&appointments.Description,
-		&appointments.Cost,
+		&appointment.Id,
+		&appointment.UserId,
+		&appointment.DoctorId,
+		&appointment.DateTime,
+		&appointment.Place,
+		&appointment.Description,
+		&appointment.Cost,
 	); err != nil {
-		return Appointments{}, err
+		return Appointment{}, err
 	}
 
-	return appointments, nil
+	return appointment, nil
 }

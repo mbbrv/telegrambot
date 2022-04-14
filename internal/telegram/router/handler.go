@@ -180,7 +180,7 @@ func (r router) handleAppointment() (string, error) {
 	textMessage, err := r.user.GetPreparedAppointment(r.db)
 	if err != nil {
 		log.Println(err)
-		return vars.NoAppointmentsMessage, err
+		return vars.NoAppointmentMessage, err
 	}
 	msg := tgbotapi.NewMessage(r.message.Chat.ID, textMessage)
 	//msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain()}
