@@ -12,5 +12,5 @@ create table if not exists Care
     unique (id),
     constraint Care_User_id_fk
     foreign key (user_id) references User (id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 

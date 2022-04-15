@@ -12,7 +12,7 @@ create table if not exists Appointment
     foreign key (doctor_id) references Doctor (id),
     constraint FK_UserId
     foreign key (user_id) references User (id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 create index Appointment_doctor_id_index
     on Appointment (doctor_id);

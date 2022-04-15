@@ -13,7 +13,7 @@ const (
 	DailyMessage              = "Здесь Вы можете настроить время оповещения для дневных и вечерних процедур"
 	DailySetTimeMessage       = "Пожалуйста, выберите время напоминания для "
 	TimeChangedSuccessMessage = "Вы успешно изменили время "
-	NoAppointmentMessage      = "К сожалению, у вас нет ближайщих записей."
+	NoAppointmentMessage      = "К сожалению, у вас нет ближайших записей."
 
 	InlineButtonAppointment = "Запись"
 	InlineButtonCare        = "Уход "

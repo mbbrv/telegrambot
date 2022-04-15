@@ -8,4 +8,4 @@ create table if not exists User
     telegram_id  int                  null,
     chat_id      int                  null,
     first_name   varchar(255)         null
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;

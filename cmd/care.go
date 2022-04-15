@@ -40,6 +40,7 @@ func processCare() {
 		}
 		for _, care := range cares {
 			msg := tgbotapi.NewMessage(user.ChatId.Int64, care)
+			msg.ParseMode = "HTML"
 			if _, err := Bot.Send(msg); err != nil {
 				log.Println(err)
 			}

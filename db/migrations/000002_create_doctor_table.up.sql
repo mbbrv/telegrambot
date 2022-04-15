@@ -9,5 +9,5 @@ create table if not exists Doctor
     whats_app_url     varchar(512) null,
     constraint Doctor_id_uindex
     unique (id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
