@@ -11,7 +11,7 @@ create table if not exists Appointment
     constraint Appointment_Doctor_id_fk
     foreign key (doctor_id) references Doctor (id),
     constraint FK_UserId
-    foreign key (user_id) references Users (id)
+    foreign key (user_id) references User (id)
 );
 
 create index Appointment_doctor_id_index
