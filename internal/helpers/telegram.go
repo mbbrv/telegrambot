@@ -5,6 +5,14 @@ import (
 	"telegrambot/internal/vars"
 )
 
+func GetConfigDir() string {
+	return "./config"
+}
+
+func GetPhotoDictionary() string {
+	return "./photos"
+}
+
 //GetMessage используется для извлечения сущности Message в апдейте.
 func GetMessage(update *tgbotapi.Update) *tgbotapi.Message {
 	if update.Message != nil {

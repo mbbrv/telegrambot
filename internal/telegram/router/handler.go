@@ -185,11 +185,11 @@ func (r router) handleAppointment() (string, error) {
 	msg := tgbotapi.NewMessage(r.message.Chat.ID, textMessage)
 	//msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain()}
 	msg.ParseMode = "HTML"
+	msg.DisableWebPagePreview = true
 	if _, err := r.bot.Send(msg); err != nil {
 		log.Println(err)
 		return vars.ErrorDefault, err
 	}
-
 	return "", nil
 }
 

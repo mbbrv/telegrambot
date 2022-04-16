@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"os"
+	"telegrambot/internal/helpers"
 	"telegrambot/internal/mysql/config"
 	"telegrambot/internal/telegram/config"
 )
@@ -39,7 +40,7 @@ func Execute() {
 }
 
 func init() {
-	viper.AddConfigPath("./config")
+	viper.AddConfigPath(helpers.GetConfigDir())
 	viper.SetConfigName("telegramBot")
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()

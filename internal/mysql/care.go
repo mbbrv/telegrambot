@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"math/rand"
+	"path"
 	"strings"
 	"telegrambot/internal/helpers"
 	"telegrambot/internal/vars"
@@ -150,4 +151,8 @@ func (user *User) SetTimeCare(hours string, minutes string, dayTime string, DB *
 
 	user.Care = !user.Care
 	return nil
+}
+
+func (care Care) GetPhotoDictionary() string {
+	return path.Join(helpers.GetPhotoDictionary(), care.PhotoDictionary.String)
 }
