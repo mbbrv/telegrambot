@@ -2,8 +2,11 @@ package mysql
 
 import (
 	"database/sql"
+	"log"
+	"math/rand"
 	"strings"
 	"telegrambot/internal/helpers"
+	"telegrambot/internal/vars"
 	"time"
 )
 
@@ -31,14 +34,25 @@ func (user User) GetPreparedCurrentCare(DB *sql.DB) ([]string, error) {
 	}
 
 	for _, care := range cares {
-		caresResult = append(caresResult, prepareCurrentCare(&care))
+		caresResult = append(caresResult, user.prepareCurrentCare(&care))
 	}
 
 	return caresResult, nil
 }
 
-func prepareCurrentCare(care *Care) string {
-	return care.Description.String
+func (user User) prepareCurrentCare(care *Care) string {
+	var res string
+	if care.DayTime.String == "morning" {
+		rand.Seed(time.Now().UnixMicro())
+		res = vars.MorningGreetings[rand.Intn(len(vars.MorningGreetings))] + user.FirstName.String + "!\n\n" +
+			"Ваши утренние процедуры\n\n"
+	} else {
+		log.Println(rand.Intn(len(vars.EveningGreetings)))
+		rand.Seed(time.Now().UnixMicro())
+		res = vars.EveningGreetings[rand.Intn(len(vars.EveningGreetings))] + user.FirstName.String + "!\n\n" +
+			"Ваши вечерние процедуры\n\n"
+	}
+	return res + care.Description.String
 }
 
 func (user User) getCurrentCare(DB *sql.DB) ([]Care, error) {
