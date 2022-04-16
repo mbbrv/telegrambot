@@ -31,4 +31,32 @@ const (
 	KeyboardButtonUsername    = "Имя пользователя"
 
 	TimeToSleep = 5
+
+	MorningGreetings1 = "🌞 Доброе утро, "
+	MorningGreetings2 = "Здравствуйте, "
+	MorningGreetings3 = "👋 Привет, "
+	MorningGreetings4 = "👋 Hello "
+	MorningGreetings5 = "Good morning "
+
+	EveningGreetings1 = "🌜Добрый вечер, "
+	EveningGreetings2 = "Здравствуйте, "
+	EveningGreetings3 = "Good evening "
+	EveningGreetings4 = "👋 Привет, "
+	EveningGreetings5 = "👋 Hello, "
 )
+
+var MorningGreetings = [...]string{
+	MorningGreetings1,
+	MorningGreetings2,
+	MorningGreetings3,
+	MorningGreetings4,
+	MorningGreetings5,
+}
+
+var EveningGreetings = [...]string{
+	EveningGreetings1,
+	EveningGreetings2,
+	EveningGreetings3,
+	EveningGreetings4,
+	EveningGreetings5,
+}
