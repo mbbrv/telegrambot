@@ -1,1 +1,0 @@
-drop table Appointment;
