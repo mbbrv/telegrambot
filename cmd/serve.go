@@ -18,12 +18,11 @@ var serveCmd = &cobra.Command{
 	Short: "Запуск бота для взаимодействия с пользователем",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		updateConfig := tgbotapi.NewUpdate(0)
 
 		updateConfig.Timeout = 30
 
-		updates := Bot.GetUpdatesChan(updateConfig)
+		updates := Service.Bot.GetUpdatesChan(updateConfig)
 
 		for update := range updates {
 			message := helpers.GetMessage(&update)
