@@ -6,7 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"telegrambot/internal/models"
-	"telegrambot/internal/service"
 	"telegrambot/internal/telegram/keyboards"
 )
 
@@ -22,8 +21,8 @@ type router struct {
 	auth   bool
 }
 
-func NewRouter(service *service.Service) Router {
-	return router{service.User, service.TgUpdate, service.Bot, service.Db, service.Auth}
+func NewRouter(user models.User, update tgbotapi.Update, bot tgbotapi.BotAPI, db sqlx.DB, auth bool) Router {
+	return router{&user, &update, &bot, &db, auth}
 }
 
 func (r router) Route() (string, error) {

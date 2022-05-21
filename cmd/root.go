@@ -15,6 +15,7 @@ import (
 	"telegrambot/internal/helpers"
 	"telegrambot/internal/mysql/config"
 	"telegrambot/internal/service"
+	telegram "telegrambot/internal/telegram/config"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -45,8 +46,9 @@ func init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	err = viper.UnmarshalKey("telegram", Service.Config)
+	log.Println("start")
+	configTg := telegram.Config{}
+	err = viper.UnmarshalKey("telegram", &configTg)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -61,15 +63,19 @@ func init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	Service.Db = db
 
-	bot, err := tgbotapi.NewBotAPI(Service.Config.Token)
-	bot.Debug = Service.Config.Dev
+	bot, err := tgbotapi.NewBotAPI(configTg.Token)
+	bot.Debug = configTg.Dev
 	if err != nil {
 		panic(err)
 	}
 
-	Service.Bot = bot
+	Service = &service.Service{
+		Db:     db,
+		Bot:    bot,
+		Config: configTg,
+	}
+
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "telegram", "", "telegram file (default is $HOME/.telegrambot.yaml)")
 
 	// Cobra also supports local flags, which will only run

@@ -16,10 +16,9 @@ type Service struct {
 	User     *models.User
 	Db       *sqlx.DB
 	Bot      *tgbotapi.BotAPI
-	Config   *telegram.Config
+	Config   telegram.Config
 	Auth     bool
 	TgUpdate *tgbotapi.Update
-	router2.Router
 }
 
 func (service *Service) Run() (string, error) {
@@ -61,7 +60,7 @@ func (service *Service) Run() (string, error) {
 		}
 	}
 
-	router := router2.NewRouter(service)
+	router := router2.NewRouter(*service.User, *service.TgUpdate, *service.Bot, *service.Db, service.Auth)
 	if errMsg, err := router.Route(); err != nil {
 		log.Println(err)
 		return errMsg, err
