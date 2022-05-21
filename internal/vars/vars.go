@@ -1,6 +1,8 @@
 package vars
 
-const (
+import "time"
+
+var (
 	ErrorNoUser  = "Пользователь не найден"
 	ErrorDefault = "Ошибка отправки сообщения"
 
@@ -30,7 +32,7 @@ const (
 	KeyboardButtonMobilePhone = "Номер телефона"
 	KeyboardButtonUsername    = "Имя пользователя"
 
-	TimeToSleep = 5
+	TimeToSleep time.Duration = 5
 
 	MorningGreetings1 = "🌞 Доброе утро, "
 	MorningGreetings2 = "Здравствуйте, "

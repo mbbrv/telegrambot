@@ -1,12 +1,12 @@
 package router
 
 import (
-	"database/sql"
 	"encoding/json"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/jmoiron/sqlx"
 	"log"
-	"telegrambot/internal/helpers"
-	"telegrambot/internal/mysql"
+	"telegrambot/internal/models"
+	"telegrambot/internal/service"
 	"telegrambot/internal/telegram/keyboards"
 )
 
@@ -15,17 +15,15 @@ type Router interface {
 }
 
 type router struct {
-	user    *mysql.User
-	update  *tgbotapi.Update
-	message *tgbotapi.Message
-	bot     *tgbotapi.BotAPI
-	db      *sql.DB
-	auth    bool
+	user   *models.User
+	update *tgbotapi.Update
+	bot    *tgbotapi.BotAPI
+	db     *sqlx.DB
+	auth   bool
 }
 
-func NewRouter(user *mysql.User, update *tgbotapi.Update, bot *tgbotapi.BotAPI, db *sql.DB, auth bool) Router {
-	message := helpers.GetMessage(update)
-	return router{user, update, message, bot, db, auth}
+func NewRouter(service *service.Service) Router {
+	return router{service.User, service.TgUpdate, service.Bot, service.Db, service.Auth}
 }
 
 func (r router) Route() (string, error) {
@@ -79,7 +77,7 @@ func (r router) Route() (string, error) {
 		}
 	}
 
-	if r.message.Command() == "description" {
+	if r.update.Message.Command() == "description" {
 		if errMsg, err := r.handleDescription(); err != nil {
 			log.Println(err)
 			return errMsg, err

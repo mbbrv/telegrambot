@@ -11,7 +11,7 @@ import (
 )
 
 func (r router) handleChangeTime(data keyboards.Data) (string, error) {
-	oldInlineKeyboard := r.message.ReplyMarkup.InlineKeyboard
+	oldInlineKeyboard := r.update.Message.ReplyMarkup.InlineKeyboard
 	hours, err := strconv.Atoi(oldInlineKeyboard[1][0].Text)
 	if err != nil {
 		log.Println(err)
@@ -41,7 +41,7 @@ func (r router) handleChangeTime(data keyboards.Data) (string, error) {
 	}
 
 	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsDailyTime(strconv.Itoa(hours), strconv.Itoa(minutes), data.DayTime)}
-	msg := tgbotapi.NewEditMessageTextAndMarkup(r.message.Chat.ID, r.message.MessageID, helpers.GetTimeSetMessage(data.DayTime), replyMarkup)
+	msg := tgbotapi.NewEditMessageTextAndMarkup(r.update.Message.Chat.ID, r.update.Message.MessageID, helpers.GetTimeSetMessage(data.DayTime), replyMarkup)
 
 	if _, err := r.bot.Send(msg); err != nil {
 		log.Println(err)
@@ -52,24 +52,19 @@ func (r router) handleChangeTime(data keyboards.Data) (string, error) {
 }
 
 func (r router) handleSetTime(dayTime string) (string, error) {
-	oldInlineKeyboard := r.message.ReplyMarkup.InlineKeyboard
+	oldInlineKeyboard := r.update.Message.ReplyMarkup.InlineKeyboard
 	hours := oldInlineKeyboard[1][0]
 	minutes := oldInlineKeyboard[1][1]
-
-	care, err := r.user.GetCareByDayTime(dayTime, r.db)
-	if err != nil {
-		return vars.ErrorDefault, err
-	}
-
-	timeCare, _ := time.Parse("15:04:05", care.Time.String)
+	care := r.user.GetCareByDayTime(dayTime)
+	timeCare, _ := time.Parse("15:04:05", care.Time.Time.String())
 	timeChanged, _ := time.Parse("15:04:05", hours.Text+":"+minutes.Text+":00")
 
 	if timeChanged != timeCare {
-		if err := r.user.SetTimeCare(hours.Text, minutes.Text, dayTime, r.db); err != nil {
+		if err := r.user.SetTimeCare(hours.Text, minutes.Text, dayTime); err != nil {
 			return vars.ErrorDefault, err
 		}
 
-		msgNew := tgbotapi.NewMessage(r.message.Chat.ID, helpers.GetTimeChangedSuccessMessage(dayTime))
+		msgNew := tgbotapi.NewMessage(r.update.Message.Chat.ID, helpers.GetTimeChangedSuccessMessage(dayTime))
 		message, err := r.bot.Send(msgNew)
 		if err != nil {
 			log.Println(err)
@@ -85,14 +80,9 @@ func (r router) handleSetTime(dayTime string) (string, error) {
 		}()
 	}
 
-	timeCares, err := r.user.GetTimeOfCares(r.db)
-	if err != nil {
-		return vars.ErrorDefault, err
-	}
-
-	preparedDailyMsg := helpers.GetPreparedDailyCareMessage(timeCares.Morning, timeCares.Evening)
+	preparedDailyMsg := helpers.GetPreparedDailyCareMessage(r.user.MorningCare.Time.Time.String(), r.user.EveningCare.Time.Time.String())
 	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsDaily("description")}
-	msg := tgbotapi.NewEditMessageTextAndMarkup(r.message.Chat.ID, r.message.MessageID, preparedDailyMsg, replyMarkup)
+	msg := tgbotapi.NewEditMessageTextAndMarkup(r.update.Message.Chat.ID, r.update.Message.MessageID, preparedDailyMsg, replyMarkup)
 	msg.ParseMode = "HTML"
 	if _, err := r.bot.Send(msg); err != nil {
 		log.Println(err)
@@ -103,18 +93,15 @@ func (r router) handleSetTime(dayTime string) (string, error) {
 }
 
 func (r router) handleTime(dayTime string) (string, error) {
-	care, err := r.user.GetCareByDayTime(dayTime, r.db)
-	if err != nil {
-		return vars.ErrorDefault, err
-	}
+	care := r.user.GetCareByDayTime(dayTime)
 
-	t, err := time.Parse("15:04:05", care.Time.String)
+	t, err := time.Parse("15:04:05", care.Time.Time.String())
 	if err != nil {
 		return vars.ErrorDefault, err
 	}
 
 	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsDailyTime(strconv.Itoa(t.Hour()), strconv.Itoa(t.Minute()), dayTime)}
-	msg := tgbotapi.NewEditMessageTextAndMarkup(r.message.Chat.ID, r.message.MessageID, helpers.GetTimeSetMessage(dayTime), replyMarkup)
+	msg := tgbotapi.NewEditMessageTextAndMarkup(r.update.Message.Chat.ID, r.update.Message.MessageID, helpers.GetTimeSetMessage(dayTime), replyMarkup)
 
 	if _, err := r.bot.Send(msg); err != nil {
 		log.Println(err)
@@ -125,14 +112,9 @@ func (r router) handleTime(dayTime string) (string, error) {
 }
 
 func (r router) handleDaily() (string, error) {
-	timeCares, err := r.user.GetTimeOfCares(r.db)
-	if err != nil {
-		return vars.ErrorDefault, err
-	}
-
-	preparedCareMsg := helpers.GetPreparedDailyCareMessage(timeCares.Morning, timeCares.Evening)
+	preparedCareMsg := helpers.GetPreparedDailyCareMessage(r.user.MorningCare.Time.Time.String(), r.user.EveningCare.Time.Time.String())
 	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsDaily("description")}
-	msg := tgbotapi.NewEditMessageTextAndMarkup(r.message.Chat.ID, r.message.MessageID, preparedCareMsg, replyMarkup)
+	msg := tgbotapi.NewEditMessageTextAndMarkup(r.update.Message.Chat.ID, r.update.Message.MessageID, preparedCareMsg, replyMarkup)
 	msg.ParseMode = "HTML"
 
 	if _, err := r.bot.Send(msg); err != nil {
@@ -144,14 +126,14 @@ func (r router) handleDaily() (string, error) {
 }
 
 func (r router) handleCare() (string, error) {
-	err := r.user.ChangeCareStatus(r.db)
+	err := r.user.ChangeCareStatus()
 	if err != nil {
 		log.Println(err)
 		return vars.ErrorDefault, err
 	}
 
-	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain(r.user.Care)}
-	msg := tgbotapi.NewEditMessageReplyMarkup(r.message.Chat.ID, r.message.MessageID, replyMarkup)
+	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain(r.user.TelegramUser.CareEnabled)}
+	msg := tgbotapi.NewEditMessageReplyMarkup(r.update.Message.Chat.ID, r.update.Message.MessageID, replyMarkup)
 	//msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain()}
 	if _, err := r.bot.Send(msg); err != nil {
 		log.Println(err)
@@ -159,7 +141,7 @@ func (r router) handleCare() (string, error) {
 	}
 
 	textMessage := r.user.GetChangeCareStatus(vars.CareDisabled, vars.CareEnabled)
-	msgNew := tgbotapi.NewMessage(r.message.Chat.ID, textMessage)
+	msgNew := tgbotapi.NewMessage(r.update.Message.Chat.ID, textMessage)
 	message, err := r.bot.Send(msgNew)
 	if err != nil {
 		log.Println(err)
@@ -177,12 +159,13 @@ func (r router) handleCare() (string, error) {
 }
 
 func (r router) handleAppointment() (string, error) {
-	textMessage, err := r.user.GetPreparedAppointment(r.db)
-	if err != nil {
-		log.Println(err)
-		return vars.NoAppointmentMessage, err
+	if r.user.Appointment != nil {
+		return vars.NoAppointmentMessage, nil
 	}
-	msg := tgbotapi.NewMessage(r.message.Chat.ID, textMessage)
+
+	textMessage := r.user.Appointment.PrepareAppointment()
+
+	msg := tgbotapi.NewMessage(r.update.Message.Chat.ID, textMessage)
 	//msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain()}
 	msg.ParseMode = "HTML"
 	msg.DisableWebPagePreview = true
@@ -194,7 +177,7 @@ func (r router) handleAppointment() (string, error) {
 }
 
 func (r router) handleGreetings() (string, error) {
-	msg := tgbotapi.NewMessage(r.message.Chat.ID, helpers.GetGreetingsMessage(r.user.FirstName.String))
+	msg := tgbotapi.NewMessage(r.update.Message.Chat.ID, helpers.GetGreetingsMessage(r.user.TelegramUser.FirstName.String))
 	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 
 	if _, err := r.bot.Send(msg); err != nil {
@@ -209,8 +192,8 @@ func (r router) handleGreetings() (string, error) {
 }
 
 func (r router) handleDescription() (string, error) {
-	msg := tgbotapi.NewMessage(r.message.Chat.ID, vars.DescriptionMessage)
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain(r.user.Care)}
+	msg := tgbotapi.NewMessage(r.update.Message.Chat.ID, vars.DescriptionMessage)
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain(r.user.TelegramUser.CareEnabled)}
 
 	if _, err := r.bot.Send(msg); err != nil {
 		return vars.ErrorDefault, err
@@ -220,8 +203,8 @@ func (r router) handleDescription() (string, error) {
 }
 
 func (r router) handleDescriptionEdit() (string, error) {
-	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain(r.user.Care)}
-	msg := tgbotapi.NewEditMessageTextAndMarkup(r.message.Chat.ID, r.message.MessageID, vars.DescriptionMessage, replyMarkup)
+	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain(r.user.TelegramUser.CareEnabled)}
+	msg := tgbotapi.NewEditMessageTextAndMarkup(r.update.Message.Chat.ID, r.update.Message.MessageID, vars.DescriptionMessage, replyMarkup)
 
 	if _, err := r.bot.Send(msg); err != nil {
 		return vars.ErrorDefault, err
