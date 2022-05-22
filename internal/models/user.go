@@ -10,8 +10,8 @@ type User struct {
 	Surname               sql.NullString `db:"surname"`
 	Email                 string         `db:"email"`
 	EmailVerifiedAt       sql.NullTime   `db:"email_verified_at"`
-	password              string         `db:"password"`
-	rememberToken         sql.NullString `db:"remember_token"`
+	Password              string         `db:"password"`
+	RememberToken         sql.NullString `db:"remember_token"`
 	TelegramUserId        int64          `db:"telegram_user_id"`
 	PhoneNumber           string         `db:"phone_number"`
 	PhoneNumberVerifiedAt sql.NullString `db:"phone_number_verified_at"`
@@ -23,7 +23,18 @@ type User struct {
 func GetUserByPhoneNum(phoneNumber string) *User {
 	user := User{}
 
-	err := Db.Get(&user, "SELECT * FROM users where users.phone_number = :phoneNumber ", phoneNumber)
+	err := Db.Get(&user, "SELECT * FROM users where users.phone_number = ?", phoneNumber)
+	if err != nil {
+		return nil
+	}
+
+	return &user
+}
+
+func GetUserByTgId(id int64) *User {
+	user := User{}
+
+	err := Db.Get(&user, "SELECT * FROM users where users.telegram_user_id = ?", id)
 	if err != nil {
 		return nil
 	}
@@ -34,7 +45,7 @@ func GetUserByPhoneNum(phoneNumber string) *User {
 func GetUser(id int64) *User {
 	user := User{}
 
-	err := Db.Get(&user, "SELECT * from users where users.id = :id", id)
+	err := Db.Get(&user, "SELECT * from users where users.id = ?", id)
 	if err != nil {
 		return nil
 	}

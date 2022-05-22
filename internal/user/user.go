@@ -1,8 +1,10 @@
-package service
+package user
 
 import (
+	"github.com/nyaruka/phonenumbers"
 	"log"
 	"math/rand"
+	"strconv"
 	"telegrambot/internal/helpers"
 	"telegrambot/internal/models"
 	"telegrambot/internal/vars"
@@ -38,6 +40,19 @@ func GetUserByPhoneNumber(phone string) *User {
 		MorningCare:  models.GetCare(userModel.MorningCareId),
 		Appointment:  models.GetAppointmentByPatientId(userModel.Id),
 		TelegramUser: models.GetTelegramUser(userModel.TelegramUserId),
+	}
+}
+
+func GetUserByTgId(id int64) *User {
+	userTgModel := models.GetTelegramUserByTgId(id)
+	userModel := models.GetUserByTgId(userTgModel.Id)
+
+	return &User{
+		User:         userModel,
+		EveningCare:  models.GetCare(userModel.EveningCareId),
+		MorningCare:  models.GetCare(userModel.MorningCareId),
+		Appointment:  models.GetAppointmentByPatientId(userModel.Id),
+		TelegramUser: userTgModel,
 	}
 }
 
@@ -80,21 +95,24 @@ func (user User) getCurrentCare() ([]models.Care, error) {
 	past := now.Add(time.Duration(-seconds) * time.Second)
 	future := now.Add(time.Duration(seconds) * time.Second)
 
-	if user.MorningCare.Time.Time.After(past) && user.MorningCare.Time.Time.Before(future) && user.MorningCare.Description.Valid {
+	morningTime, _ := user.MorningCare.Time.Time()
+	eveningTime, _ := user.EveningCare.Time.Time()
+
+	if morningTime.After(past) && morningTime.Before(future) && user.MorningCare.Description.Valid {
 		cares = append(cares, *user.MorningCare)
 	}
-	if user.EveningCare.Time.Time.After(past) && user.EveningCare.Time.Time.Before(future) && user.EveningCare.Description.Valid {
+	if eveningTime.After(past) && eveningTime.Before(future) && user.EveningCare.Description.Valid {
 		cares = append(cares, *user.MorningCare)
 	}
 
 	return cares, nil
 }
 
-func (user User) GetCareByDayTime(dayTime string) models.Care {
+func (user User) GetCareByDayTime(dayTime string) *models.Care {
 	if dayTime == "morning" {
-		return *user.MorningCare
+		return user.MorningCare
 	} else {
-		return *user.EveningCare
+		return user.EveningCare
 	}
 }
 
@@ -113,8 +131,8 @@ func (user *User) SetTimeCare(hours string, minutes string, dayTime string) erro
 	if err != nil {
 		return err
 	}
+	care.Time = []byte(timeFormat)
 
-	user.TelegramUser.CareEnabled = !user.TelegramUser.CareEnabled
 	return nil
 }
 
@@ -138,4 +156,24 @@ func GetAllUsersWithCare() ([]User, error) {
 		users = append(users, *GetUser(user.Id))
 	}
 	return users, nil
+}
+
+func (user User) PrepareAppointment() string {
+	parseTime, _ := time.Parse("2006-01-02T15:04:05Z", user.Appointment.DateTime.String)
+	doctor := GetUser(user.Appointment.DoctorId)
+
+	phoneNumber, _ := phonenumbers.Parse(doctor.User.PhoneNumber, "RU")
+
+	var res = "<b>Ваша ближайшая запись:</b>\n\n\n" +
+		"🧖‍♀️<b>Процедура:</b> " + user.Appointment.Description.String + "\n\n" +
+		"💵<b>Стоимость:</b> " + strconv.FormatInt(user.Appointment.Cost.Int64, 10) + " ₽\n\n" +
+		"⏰<b>Дата и время:</b> " + parseTime.Format("15:04 02-01-2006") + "\n\n" +
+		"🏥<b>Место:</b> " + user.Appointment.Place.String + "\n\n" +
+		"👩🏻‍⚕️<b>Врач:</b> " + doctor.User.Name + "\n\n" +
+		"=============================" + "\n\n" +
+		"Контакты врача:" + "\n\n" +
+		"	📱<b>Telegram:</b> " + doctor.TelegramUser.Username.String + "\n\n" +
+		"	📞<b>Экстренная связь:</b> " + phonenumbers.Format(phoneNumber, phonenumbers.INTERNATIONAL)
+
+	return res
 }

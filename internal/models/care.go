@@ -2,19 +2,21 @@ package models
 
 import (
 	"database/sql"
+	"log"
 )
 
 type Care struct {
-	Id          int64
-	Description sql.NullString
-	Time        sql.NullTime
+	Id          int64          `db:"id"`
+	Description sql.NullString `db:"description"`
+	Time        rawTime        `db:"time"`
 	TimeAt
 }
 
 func GetCare(id int64) *Care {
 	var care = Care{}
-	err := Db.Get(&care, `SELECT * FROM cares WHERE id = :id`, id)
+	err := Db.Get(&care, `SELECT * FROM cares WHERE id=?`, id)
 	if err != nil {
+		log.Println(err)
 		return nil
 	}
 

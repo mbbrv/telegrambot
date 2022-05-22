@@ -5,26 +5,28 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jmoiron/sqlx"
 	"log"
+	"telegrambot/internal/helpers"
 	telegram "telegrambot/internal/telegram/config"
 	"telegrambot/internal/telegram/keyboards"
 	router2 "telegrambot/internal/telegram/router"
+	"telegrambot/internal/user"
 	"telegrambot/internal/vars"
 )
 
 type Service struct {
-	User     *User
+	User     *user.User
 	Db       *sqlx.DB
 	Bot      *tgbotapi.BotAPI
-	Config   telegram.Config
+	Config   *telegram.Config
 	Auth     bool
 	TgUpdate *tgbotapi.Update
 }
 
 func (service *Service) Run() (string, error) {
 	service.Auth = false
-	if service.TgUpdate.Message == nil {
-		return "", nil
-	}
+	//if service.TgUpdate.Message == nil {
+	//	return "", nil
+	//}
 
 	if service.TgUpdate.Message.Text == "/start" {
 
@@ -57,9 +59,11 @@ func (service *Service) Run() (string, error) {
 			log.Println(err)
 			return vars.ErrorNoUser, err
 		}
+	} else {
+		service.User = user.GetUserByTgId(helpers.GetFrom(service.TgUpdate).ID)
 	}
 
-	router := router2.NewRouter(*service.User, *service.TgUpdate, *service.Bot, *service.Db, service.Auth)
+	router := router2.NewRouter(service.User, service.TgUpdate, service.Bot, service.Db, &service.Auth)
 	if errMsg, err := router.Route(); err != nil {
 		log.Println(err)
 		return errMsg, err
@@ -70,18 +74,18 @@ func (service *Service) Run() (string, error) {
 
 func (service *Service) Update() error {
 	tgUser := service.TgUpdate.SentFrom()
-	user := GetUserByPhoneNumber(service.TgUpdate.Message.Contact.PhoneNumber)
+	userU := user.GetUserByPhoneNumber(service.TgUpdate.Message.Contact.PhoneNumber)
 
-	user.TelegramUser.TelegramId = sql.NullInt64{Int64: tgUser.ID}
-	user.TelegramUser.ChatId = sql.NullInt64{Int64: service.TgUpdate.Message.Chat.ID}
-	user.TelegramUser.IsBot = tgUser.IsBot
-	user.TelegramUser.FirstName = sql.NullString{String: tgUser.FirstName}
-	user.TelegramUser.LastName = sql.NullString{String: tgUser.LastName}
-	user.TelegramUser.Username = sql.NullString{String: tgUser.UserName}
-	user.TelegramUser.CanJoinGroups = tgUser.CanJoinGroups
-	user.TelegramUser.CanReadAllGroupMessages = tgUser.CanReadAllGroupMessages
-	user.TelegramUser.SupportsInlineQueries = tgUser.SupportsInlineQueries
-	user.TelegramUser.LanguageCode = sql.NullString{String: tgUser.LanguageCode}
+	userU.TelegramUser.TelegramId = sql.NullInt64{Int64: tgUser.ID}
+	userU.TelegramUser.ChatId = sql.NullInt64{Int64: service.TgUpdate.Message.Chat.ID}
+	userU.TelegramUser.IsBot = tgUser.IsBot
+	userU.TelegramUser.FirstName = sql.NullString{String: tgUser.FirstName}
+	userU.TelegramUser.LastName = sql.NullString{String: tgUser.LastName}
+	userU.TelegramUser.Username = sql.NullString{String: tgUser.UserName}
+	userU.TelegramUser.CanJoinGroups = tgUser.CanJoinGroups
+	userU.TelegramUser.CanReadAllGroupMessages = tgUser.CanReadAllGroupMessages
+	userU.TelegramUser.SupportsInlineQueries = tgUser.SupportsInlineQueries
+	userU.TelegramUser.LanguageCode = sql.NullString{String: tgUser.LanguageCode}
 
 	_, err := service.Db.NamedExec(`UPDATE telegram_users SET 
                           telegram_id = :telegram_id, 
@@ -96,22 +100,23 @@ func (service *Service) Update() error {
                           language_code = :lc
                           WHERE id = :id`,
 		map[string]interface{}{
-			"id":         user.TelegramUser.Id,
-			"chat_id":    service.TgUpdate.Message.Chat.ID,
-			"is_bot":     tgUser.IsBot,
-			"first_name": tgUser.FirstName,
-			"last_name":  tgUser.LastName,
-			"username":   tgUser.UserName,
-			"cjg":        tgUser.CanJoinGroups,
-			"cralgm":     tgUser.CanReadAllGroupMessages,
-			"siq":        tgUser.SupportsInlineQueries,
-			"lc":         tgUser.LanguageCode,
+			"id":          userU.TelegramUser.Id,
+			"telegram_id": tgUser.ID,
+			"chat_id":     service.TgUpdate.Message.Chat.ID,
+			"is_bot":      tgUser.IsBot,
+			"first_name":  tgUser.FirstName,
+			"last_name":   tgUser.LastName,
+			"username":    tgUser.UserName,
+			"cjg":         tgUser.CanJoinGroups,
+			"cralgm":      tgUser.CanReadAllGroupMessages,
+			"siq":         tgUser.SupportsInlineQueries,
+			"lc":          tgUser.LanguageCode,
 		})
 	if err != nil {
 		return err
 	}
 
-	service.User = user
+	service.User = userU
 	service.Auth = true
 
 	return nil

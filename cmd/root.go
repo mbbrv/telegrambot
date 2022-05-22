@@ -76,7 +76,7 @@ func init() {
 	Service = &service.Service{
 		Db:     db,
 		Bot:    bot,
-		Config: configTg,
+		Config: &configTg,
 	}
 
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "telegram", "", "telegram file (default is $HOME/.telegrambot.yaml)")

@@ -5,7 +5,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
 	"log"
-	"telegrambot/internal/service"
+	"telegrambot/internal/user"
 	"telegrambot/internal/vars"
 	"time"
 )
@@ -28,18 +28,18 @@ func init() {
 }
 
 func processCare() {
-	users, err := service.GetAllUsersWithCare()
+	users, err := user.GetAllUsersWithCare()
 	if err != nil {
 		return
 	}
 
-	for _, user := range users {
-		cares, err := user.GetPreparedCurrentCare()
+	for _, u := range users {
+		cares, err := u.GetPreparedCurrentCare()
 		if err != nil {
 			log.Println(err)
 		}
 		for _, care := range cares {
-			msg := tgbotapi.NewMessage(user.TelegramUser.ChatId.Int64, care)
+			msg := tgbotapi.NewMessage(u.TelegramUser.ChatId.Int64, care)
 			msg.ParseMode = "HTML"
 			if _, err := Service.Bot.Send(msg); err != nil {
 				log.Println(err)

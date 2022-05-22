@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"log"
 )
 
 type TelegramUser struct {
@@ -22,8 +23,20 @@ type TelegramUser struct {
 
 func GetTelegramUser(id int64) *TelegramUser {
 	telegramUser := TelegramUser{}
-	err := Db.Get(&telegramUser, `SELECT * from telegram_users where id = :id`, id)
+	err := Db.Get(&telegramUser, `SELECT * from telegram_users where id =?`, id)
 	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	return &telegramUser
+}
+
+func GetTelegramUserByTgId(id int64) *TelegramUser {
+	telegramUser := TelegramUser{}
+	err := Db.Get(&telegramUser, `SELECT * from telegram_users where telegram_id =?`, id)
+	if err != nil {
+		log.Println(err)
 		return nil
 	}
 

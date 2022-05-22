@@ -10,12 +10,13 @@ import (
 	"telegrambot/internal/models"
 	mysql "telegrambot/internal/mysql/config"
 	telegram "telegrambot/internal/telegram/config"
+	"telegrambot/internal/user"
 	"testing"
 )
 
 func TestUserModel(t *testing.T) {
 	db := GetDbConnection()
-	db = db.Unsafe()
+
 	user := models.User{}
 
 	err := db.Get(&user, "SELECT * from users")
@@ -24,6 +25,36 @@ func TestUserModel(t *testing.T) {
 	}
 
 	b, err := json.Marshal(user)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(string(b))
+}
+
+func TestUserPhoneNumber(t *testing.T) {
+	db := GetDbConnection()
+	models.Db = db
+	var phone = "79169641992"
+	u := models.User{}
+
+	err := db.Get(&u, "SELECT * FROM users where phone_number=?", phone)
+	if err != nil {
+		log.Println(err)
+	}
+
+	b, err := json.Marshal(&u)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(string(b))
+
+	b, err = json.Marshal(&user.User{
+		User:         &u,
+		EveningCare:  models.GetCare(u.EveningCareId),
+		MorningCare:  models.GetCare(u.MorningCareId),
+		Appointment:  models.GetAppointmentByPatientId(u.Id),
+		TelegramUser: models.GetTelegramUser(u.TelegramUserId),
+	})
 	if err != nil {
 		log.Println(err)
 	}
@@ -50,8 +81,9 @@ func GetDbConnection() *sqlx.DB {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	db, err := sqlx.Open("mysql", configDB.User+":"+configDB.Password+"@/"+configDB.DB+"?parseTime=true")
+	var dataSourceName = configDB.User + ":" + configDB.Password + "@/" + configDB.DB + "?parseTime=true"
+	db, err := sqlx.Open("mysql", dataSourceName)
+	db.Driver()
 	if err != nil {
 		log.Fatalln(err)
 	}
