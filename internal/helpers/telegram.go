@@ -34,9 +34,9 @@ func GetGreetingsMessage(firstName string) string {
 //GetTimeDivisionInSeconds Половина времени в секундах от времени для сна.
 func GetTimeDivisionInSeconds() int {
 	if vars.TimeToSleep%2 == 1 {
-		return vars.TimeToSleep/2*60 + 30
+		return int(vars.TimeToSleep/2*60 + 30)
 	}
-	return vars.TimeToSleep / 2 * 60
+	return int(vars.TimeToSleep / 2 * 60)
 }
 
 func GetTimeSetMessage(dayTime string) string {
@@ -97,5 +97,13 @@ func DecreaseMinutes(minutes int) int {
 		return minutes - 15
 	} else {
 		return 45
+	}
+}
+
+func GetFrom(update *tgbotapi.Update) *tgbotapi.User {
+	if update.CallbackQuery != nil {
+		return update.CallbackQuery.From
+	} else {
+		return update.SentFrom()
 	}
 }

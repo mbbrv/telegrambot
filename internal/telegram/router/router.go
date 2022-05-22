@@ -1,41 +1,33 @@
 package router
 
 import (
-	"database/sql"
 	"encoding/json"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/jmoiron/sqlx"
 	"log"
-	"telegrambot/internal/helpers"
-	"telegrambot/internal/mysql"
 	"telegrambot/internal/telegram/keyboards"
+	"telegrambot/internal/user"
 )
 
-type Router interface {
-	Route() (string, error)
+type Router struct {
+	user   *user.User
+	update *tgbotapi.Update
+	bot    *tgbotapi.BotAPI
+	db     *sqlx.DB
+	auth   bool
 }
 
-type router struct {
-	user    *mysql.User
-	update  *tgbotapi.Update
-	message *tgbotapi.Message
-	bot     *tgbotapi.BotAPI
-	db      *sql.DB
-	auth    bool
+func NewRouter(user *user.User, update *tgbotapi.Update, bot *tgbotapi.BotAPI, db *sqlx.DB, auth *bool) Router {
+	return Router{user, update, bot, db, *auth}
 }
 
-func NewRouter(user *mysql.User, update *tgbotapi.Update, bot *tgbotapi.BotAPI, db *sql.DB, auth bool) Router {
-	message := helpers.GetMessage(update)
-	return router{user, update, message, bot, db, auth}
-}
-
-func (r router) Route() (string, error) {
+func (r Router) Route() (string, error) {
 	if r.auth {
-		if errMsg, err := r.handleGreetings(); err != nil {
+		if errMsg, err := r.HandleGreetings(); err != nil {
 			log.Println(err)
 			return errMsg, err
 		}
 	}
-
 	switch r.update.CallbackData() {
 	case "daily":
 		if errMsg, err := r.handleDaily(); err != nil {
@@ -79,7 +71,7 @@ func (r router) Route() (string, error) {
 		}
 	}
 
-	if r.message.Command() == "description" {
+	if r.update.Message.Command() == "description" {
 		if errMsg, err := r.handleDescription(); err != nil {
 			log.Println(err)
 			return errMsg, err
