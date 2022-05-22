@@ -5,7 +5,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jmoiron/sqlx"
 	"log"
-	"telegrambot/internal/models"
 	telegram "telegrambot/internal/telegram/config"
 	"telegrambot/internal/telegram/keyboards"
 	router2 "telegrambot/internal/telegram/router"
@@ -13,7 +12,7 @@ import (
 )
 
 type Service struct {
-	User     *models.User
+	User     *User
 	Db       *sqlx.DB
 	Bot      *tgbotapi.BotAPI
 	Config   telegram.Config
@@ -71,10 +70,7 @@ func (service *Service) Run() (string, error) {
 
 func (service *Service) Update() error {
 	tgUser := service.TgUpdate.SentFrom()
-	user, err := models.GetUserByPhoneNum(service.TgUpdate.Message.Contact.PhoneNumber)
-	if err != nil {
-		return err
-	}
+	user := GetUserByPhoneNumber(service.TgUpdate.Message.Contact.PhoneNumber)
 
 	user.TelegramUser.TelegramId = sql.NullInt64{Int64: tgUser.ID}
 	user.TelegramUser.ChatId = sql.NullInt64{Int64: service.TgUpdate.Message.Chat.ID}
@@ -87,7 +83,7 @@ func (service *Service) Update() error {
 	user.TelegramUser.SupportsInlineQueries = tgUser.SupportsInlineQueries
 	user.TelegramUser.LanguageCode = sql.NullString{String: tgUser.LanguageCode}
 
-	_, err = service.Db.NamedExec(`UPDATE telegram_users SET 
+	_, err := service.Db.NamedExec(`UPDATE telegram_users SET 
                           telegram_id = :telegram_id, 
                           chat_id = :chat_id, 
                           is_bot = :is_bot, 
@@ -115,7 +111,7 @@ func (service *Service) Update() error {
 		return err
 	}
 
-	service.User = &user
+	service.User = user
 	service.Auth = true
 
 	return nil

@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"telegrambot/internal/helpers"
+	"telegrambot/internal/models"
 	"telegrambot/internal/mysql/config"
 	"telegrambot/internal/service"
 	telegram "telegrambot/internal/telegram/config"
@@ -69,6 +70,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	models.Db = db
 
 	Service = &service.Service{
 		Db:     db,

@@ -5,7 +5,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var Db sqlx.DB
+var Db *sqlx.DB
 
 type TimeAt struct {
 	CreatedAt sql.NullTime `db:"created_at"`

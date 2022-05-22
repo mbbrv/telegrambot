@@ -5,7 +5,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
 	"log"
-	"telegrambot/internal/models"
+	"telegrambot/internal/service"
 	"telegrambot/internal/vars"
 	"time"
 )
@@ -28,7 +28,7 @@ func init() {
 }
 
 func processCare() {
-	users, err := models.GetAllUsersWithCare()
+	users, err := service.GetAllUsersWithCare()
 	if err != nil {
 		return
 	}

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (r router) handleChangeTime(data keyboards.Data) (string, error) {
+func (r Router) handleChangeTime(data keyboards.Data) (string, error) {
 	oldInlineKeyboard := r.update.Message.ReplyMarkup.InlineKeyboard
 	hours, err := strconv.Atoi(oldInlineKeyboard[1][0].Text)
 	if err != nil {
@@ -51,7 +51,7 @@ func (r router) handleChangeTime(data keyboards.Data) (string, error) {
 	return "", nil
 }
 
-func (r router) handleSetTime(dayTime string) (string, error) {
+func (r Router) handleSetTime(dayTime string) (string, error) {
 	oldInlineKeyboard := r.update.Message.ReplyMarkup.InlineKeyboard
 	hours := oldInlineKeyboard[1][0]
 	minutes := oldInlineKeyboard[1][1]
@@ -92,7 +92,7 @@ func (r router) handleSetTime(dayTime string) (string, error) {
 	return "", nil
 }
 
-func (r router) handleTime(dayTime string) (string, error) {
+func (r Router) handleTime(dayTime string) (string, error) {
 	care := r.user.GetCareByDayTime(dayTime)
 
 	t, err := time.Parse("15:04:05", care.Time.Time.String())
@@ -111,7 +111,7 @@ func (r router) handleTime(dayTime string) (string, error) {
 	return "", nil
 }
 
-func (r router) handleDaily() (string, error) {
+func (r Router) handleDaily() (string, error) {
 	preparedCareMsg := helpers.GetPreparedDailyCareMessage(r.user.MorningCare.Time.Time.String(), r.user.EveningCare.Time.Time.String())
 	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsDaily("description")}
 	msg := tgbotapi.NewEditMessageTextAndMarkup(r.update.Message.Chat.ID, r.update.Message.MessageID, preparedCareMsg, replyMarkup)
@@ -125,7 +125,7 @@ func (r router) handleDaily() (string, error) {
 	return "", nil
 }
 
-func (r router) handleCare() (string, error) {
+func (r Router) handleCare() (string, error) {
 	err := r.user.ChangeCareStatus()
 	if err != nil {
 		log.Println(err)
@@ -158,7 +158,7 @@ func (r router) handleCare() (string, error) {
 	return "", nil
 }
 
-func (r router) handleAppointment() (string, error) {
+func (r Router) handleAppointment() (string, error) {
 	if r.user.Appointment != nil {
 		return vars.NoAppointmentMessage, nil
 	}
@@ -176,7 +176,7 @@ func (r router) handleAppointment() (string, error) {
 	return "", nil
 }
 
-func (r router) handleGreetings() (string, error) {
+func (r Router) handleGreetings() (string, error) {
 	msg := tgbotapi.NewMessage(r.update.Message.Chat.ID, helpers.GetGreetingsMessage(r.user.TelegramUser.FirstName.String))
 	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 
@@ -191,7 +191,7 @@ func (r router) handleGreetings() (string, error) {
 	return "", nil
 }
 
-func (r router) handleDescription() (string, error) {
+func (r Router) handleDescription() (string, error) {
 	msg := tgbotapi.NewMessage(r.update.Message.Chat.ID, vars.DescriptionMessage)
 	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain(r.user.TelegramUser.CareEnabled)}
 
@@ -202,7 +202,7 @@ func (r router) handleDescription() (string, error) {
 	return "", nil
 }
 
-func (r router) handleDescriptionEdit() (string, error) {
+func (r Router) handleDescriptionEdit() (string, error) {
 	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboards.GetInlineButtonsMain(r.user.TelegramUser.CareEnabled)}
 	msg := tgbotapi.NewEditMessageTextAndMarkup(r.update.Message.Chat.ID, r.update.Message.MessageID, vars.DescriptionMessage, replyMarkup)
 

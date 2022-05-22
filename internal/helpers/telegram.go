@@ -6,7 +6,7 @@ import (
 )
 
 func GetConfigDir() string {
-	return "./config"
+	return "../config"
 }
 
 func GetPhotoDictionary() string {

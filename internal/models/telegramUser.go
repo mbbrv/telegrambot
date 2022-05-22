@@ -1,9 +1,11 @@
 package models
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type TelegramUser struct {
-	Id                      int            `db:"id"`
+	Id                      int64          `db:"id"`
 	TelegramId              sql.NullInt64  `db:"telegram_id"`
 	ChatId                  sql.NullInt64  `db:"chat_id"`
 	IsBot                   bool           `db:"is_bot"`
@@ -16,4 +18,23 @@ type TelegramUser struct {
 	LanguageCode            sql.NullString `db:"language_code"`
 	CareEnabled             bool           `db:"care_enabled"`
 	TimeAt
+}
+
+func GetTelegramUser(id int64) *TelegramUser {
+	telegramUser := TelegramUser{}
+	err := Db.Get(&telegramUser, `SELECT * from telegram_users where id = :id`, id)
+	if err != nil {
+		return nil
+	}
+
+	return &telegramUser
+}
+
+func UpdateTelegramUser(careEnabled bool, Id int64) error {
+	_, err := Db.Exec(`UPDATE telegram_users SET care_enabled = ? WHERE id = ?`, careEnabled, Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -5,27 +5,23 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jmoiron/sqlx"
 	"log"
-	"telegrambot/internal/models"
+	"telegrambot/internal/service"
 	"telegrambot/internal/telegram/keyboards"
 )
 
-type Router interface {
-	Route() (string, error)
-}
-
-type router struct {
-	user   *models.User
+type Router struct {
+	user   *service.User
 	update *tgbotapi.Update
 	bot    *tgbotapi.BotAPI
 	db     *sqlx.DB
 	auth   bool
 }
 
-func NewRouter(user models.User, update tgbotapi.Update, bot tgbotapi.BotAPI, db sqlx.DB, auth bool) Router {
-	return router{&user, &update, &bot, &db, auth}
+func NewRouter(user service.User, update tgbotapi.Update, bot tgbotapi.BotAPI, db sqlx.DB, auth bool) Router {
+	return Router{&user, &update, &bot, &db, auth}
 }
 
-func (r router) Route() (string, error) {
+func (r Router) Route() (string, error) {
 	if r.auth {
 		if errMsg, err := r.handleGreetings(); err != nil {
 			log.Println(err)
