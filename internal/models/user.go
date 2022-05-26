@@ -20,15 +20,15 @@ type User struct {
 	TimeAt
 }
 
-func GetUserByPhoneNum(phoneNumber string) *User {
+func GetUserByPhoneNum(phoneNumber string) (*User, error) {
 	user := User{}
 
 	err := Db.Get(&user, "SELECT * FROM users where users.phone_number = ?", phoneNumber)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return &user
+	return &user, nil
 }
 
 func GetUserByTgId(id int64) *User {

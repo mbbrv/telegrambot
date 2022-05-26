@@ -31,8 +31,11 @@ func GetUser(id int64) *User {
 	}
 }
 
-func GetUserByPhoneNumber(phone string) *User {
-	userModel := models.GetUserByPhoneNum(phone)
+func GetUserByPhoneNumber(phone string) (*User, error) {
+	userModel, err := models.GetUserByPhoneNum(phone)
+	if err != nil {
+		return nil, err
+	}
 
 	return &User{
 		User:         userModel,
@@ -40,7 +43,7 @@ func GetUserByPhoneNumber(phone string) *User {
 		MorningCare:  models.GetCare(userModel.MorningCareId),
 		Appointment:  models.GetAppointmentByPatientId(userModel.Id),
 		TelegramUser: models.GetTelegramUser(userModel.TelegramUserId),
-	}
+	}, nil
 }
 
 func GetUserByTgId(id int64) *User {

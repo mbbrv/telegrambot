@@ -74,7 +74,10 @@ func (service *Service) Run() (string, error) {
 
 func (service *Service) Update() error {
 	tgUser := service.TgUpdate.SentFrom()
-	userU := user.GetUserByPhoneNumber(service.TgUpdate.Message.Contact.PhoneNumber)
+	userU, err := user.GetUserByPhoneNumber(service.TgUpdate.Message.Contact.PhoneNumber)
+	if err != nil {
+		return err
+	}
 
 	userU.TelegramUser.TelegramId = sql.NullInt64{Int64: tgUser.ID}
 	userU.TelegramUser.ChatId = sql.NullInt64{Int64: service.TgUpdate.Message.Chat.ID}
@@ -87,7 +90,7 @@ func (service *Service) Update() error {
 	userU.TelegramUser.SupportsInlineQueries = tgUser.SupportsInlineQueries
 	userU.TelegramUser.LanguageCode = sql.NullString{String: tgUser.LanguageCode}
 
-	_, err := service.Db.NamedExec(`UPDATE telegram_users SET 
+	_, err = service.Db.NamedExec(`UPDATE telegram_users SET 
                           telegram_id = :telegram_id, 
                           chat_id = :chat_id, 
                           is_bot = :is_bot, 
