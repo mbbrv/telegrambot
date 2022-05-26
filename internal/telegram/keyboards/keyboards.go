@@ -12,7 +12,7 @@ import (
 func GetKeyboardButtonsStart() [][]tgbotapi.KeyboardButton {
 	return [][]tgbotapi.KeyboardButton{
 		{tgbotapi.NewKeyboardButtonContact(vars.KeyboardButtonMobilePhone)},
-		{tgbotapi.NewKeyboardButton(vars.KeyboardButtonUsername)},
+		//{tgbotapi.NewKeyboardButton(vars.KeyboardButtonUsername)},
 	}
 }
 
